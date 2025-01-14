@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\City;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -29,6 +30,10 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
+            'role' => $this->faker->randomElement(['customer','reseller']),
+            'city_id' => City::inRandomOrder()->first()->id, // Random city from cities table 
+            'referral_code' => Str::upper(Str::random(8)),
+            'balance' => 0,
         ];
     }
 
