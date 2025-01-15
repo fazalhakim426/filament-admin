@@ -30,10 +30,13 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
-            'role' => $this->faker->randomElement(['customer','reseller']),
+            'role_id' => $this->faker->randomElement([2,3,4]),
             'city_id' => City::inRandomOrder()->first()->id, // Random city from cities table 
             'referral_code' => Str::upper(Str::random(8)),
             'balance' => 0,
+            'contact_number' => fake()->phoneNumber(),
+            'whatsapp_number' => fake()->phoneNumber(), 
+            'address' => fake()->address(),  
         ];
     }
 

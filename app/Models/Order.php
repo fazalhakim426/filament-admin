@@ -12,4 +12,20 @@ class Order extends Model
     function products() {
         return $this->belongsToMany(Product::class, 'order_items', 'order_id', 'product_id')->withPivot('amount');
     }
+    function user() {
+        return $this->belongsTo(User::class);
+    }
+    function supplierUser() {
+        return $this->belongsTo(User::class,'supplier_user_id');
+    }
+    function customerUser() {
+        return $this->belongsTo(User::class,'customer_user_id');
+    }
+//order items
+    function items() {
+        return $this->hasMany(OrderItem::class);
+    }
+
+
 }
+

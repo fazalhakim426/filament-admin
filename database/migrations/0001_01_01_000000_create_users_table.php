@@ -20,40 +20,46 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->timestamps();
         });
+        // Roles Table
+        Schema::create('roles', function (Blueprint $table) {
+            $table->id();
+            $table->string('name')->unique();
+            $table->timestamps();
+        });
 
 
         // Users table
         Schema::create('users', function (Blueprint $table) {
-            $table->id(); // Auto-increment ID
+            $table->id();
             $table->string('name');
             $table->string('email')->unique();
+            $table->string('password');
             $table->timestamp('email_verified_at')->nullable();
             $table->boolean('active')->default(true);
-            $table->string('password');
-            $table->rememberToken();
             $table->foreignId('current_team_id')->nullable();
             $table->string('profile_photo_path', 2048)->nullable();
-            $table->string('city_id')->nullable();
+            $table->foreignId('city_id')->nullable()->constrained('cities');
             $table->text('address')->nullable();
             $table->string('contact_number')->nullable();
             $table->string('whatsapp_number')->nullable();
-            $table->string('role')->default('customer');
-            $table->string('referral_code')->unique()->nullable();
+            $table->foreignId('role_id')->constrained('roles');
+            $table->string('referral_code')->nullable()->unique();
             $table->decimal('balance', 10, 2)->default(0.00);
-
+            $table->rememberToken();
             $table->softDeletes();
             $table->timestamps();
+            $table->index(['email', 'id', 'role_id']);
         });
-        // Suppliers table
-        Schema::create('suppliers', function (Blueprint $table) {
+
+        Schema::create('supplier_details', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->string('business_name');
             $table->string('contact_person')->nullable();
             $table->string('website')->nullable();
             $table->string('supplier_type')->nullable();
-            $table->string('main_category_id')->nullable()->constrained('categories');
-            $table->string('secondary_category_id')->nullable()->constrained('categories');
+            $table->foreignId('main_category_id')->nullable()->constrained('categories');
+            $table->foreignId('secondary_category_id')->nullable()->constrained('categories');
             $table->integer('product_available')->default(0);
             $table->string('product_source')->nullable();
             $table->string('product_unit_quality')->nullable();
@@ -62,54 +68,77 @@ return new class extends Migration
             $table->boolean('using_daraz')->default(false);
             $table->string('daraz_url')->nullable();
             $table->string('ecommerce_experience')->nullable();
-            $table->string('term_agreed')->nullable();
-            $table->foreignId('marketing_type');
+            $table->boolean('term_agreed')->default(false);
+            $table->string('marketing_type')->nullable();
             $table->timestamp('preferred_contact_time')->nullable();
             $table->softDeletes();
             $table->timestamps();
+            //indexing  
         });
+
+
         // Products table
         Schema::create('products', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('supplier_id')->constrained('suppliers');
+            $table->foreignId('supplier_user_id')->constrained('users');
             $table->foreignId('category_id')->constrained('categories');
             $table->string('name');
             $table->text('description')->nullable();
             $table->decimal('selling_price', 10, 2);
             $table->decimal('price', 10, 2);
+            $table->decimal('referral_reward_amount', 10, 2)->nullable();
+            $table->decimal('referral_reward_percentage', 10, 2)->nullable();
             $table->integer('stock_quantity');
             $table->string('sku')->nullable();
             $table->boolean('is_active')->default(true);
             $table->softDeletes();
             $table->timestamps();
+            $table->index(['id']);
         });
 
         // Orders table
-        Schema::create('orders', function (Blueprint $table) {
+        Schema::create('orders', function (Blueprint $table){
             $table->id();
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('customer_user_id')->constrained('users')->onDelete('cascade');
             $table->decimal('total_price', 10, 2);
             $table->enum('status', ['pending', 'confirmed', 'shipped', 'delivered', 'canceled'])->default('pending');
             $table->timestamps();
             $table->softDeletes();
+            $table->index(['id']);
         });
         Schema::create('order_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('order_id')->constrained('orders');
             $table->foreignId('product_id')->constrained('products');
+            $table->foreignId('supplier_user_id')->constrained('users'); //for searching purpose the get saled items directly not through products and order.for future use.
             $table->integer('quantity');
             $table->decimal('price', 10, 2);
+        });
+
+        // Referrals table
+        Schema::create('referrals', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('supplier_user_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('reseller_user_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('order_item_id')->constrained('order_items')->onDelete('cascade');
+            $table->boolean('reward_released')->default(false);
+            $table->decimal('reward_amount', 10, 2)->default(0.00);
+            $table->string('referral_code')->nullable();
+            $table->softDeletes();
+            $table->timestamps();
         });
         // Payments table
         Schema::create('deposits', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->string('transaction_reference')->nullable();
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade'); //deposit own by. 
             $table->foreignId('order_id')->nullable()->constrained('orders')->onDelete('cascade');
+            $table->foreignId('referral_id')->nullable()->constrained('referrals')->onDelete('cascade'); //deposit made to supplier. will null for other transactions.
             $table->decimal('amount', 10, 2);
             $table->enum('transaction_type', ['debit', 'credit']);
-            $table->enum('deposit_type', ['card', 'bank', 'admin', 'wallet']);
-            $table->string('transaction_reference')->nullable();
+            $table->string('deposit_type');
             $table->decimal('balance', 10, 2)->default(0);
+            $table->string('description')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });
@@ -121,19 +150,6 @@ return new class extends Migration
             $table->string('title');
             $table->text('message');
             $table->boolean('is_read')->default(false);
-            $table->timestamps();
-        });
-
-        // Referrals table
-        Schema::create('referrals', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('supplier_id')->constrained('suppliers')->onDelete('cascade');
-            $table->foreignId('order_id')->constrained('orders')->onDelete('cascade');
-            $table->string('referral_code');
-            $table->decimal('reward_amount', 10, 2)->default(0.00);
-            $table->softDeletes();
-
             $table->timestamps();
         });
 
@@ -150,20 +166,32 @@ return new class extends Migration
             $table->longText('payload');
             $table->integer('last_activity')->index();
         });
+
+        Schema::create('images', function (Blueprint $table) {
+            $table->id();
+            $table->string('url');
+            $table->unsignedBigInteger('imageable_id');
+            $table->string('imageable_type');
+            $table->timestamps();
+        });
     }
 
     public function down()
     {
+
+        Schema::dropIfExists('images');
         Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('sessions');
-        Schema::dropIfExists('referrals');
         Schema::dropIfExists('notifications');
         Schema::dropIfExists('deposits');
+        Schema::dropIfExists('referrals');
         Schema::dropIfExists('order_items');
         Schema::dropIfExists('orders');
         Schema::dropIfExists('products');
-        Schema::dropIfExists('suppliers');
+        Schema::dropIfExists('supplier_details');
+        Schema::dropIfExists('user_profiles');
         Schema::dropIfExists('users');
+        Schema::dropIfExists('roles');
         Schema::dropIfExists('categories');
         Schema::dropIfExists('cities');
     }

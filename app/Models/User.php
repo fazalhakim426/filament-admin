@@ -2,10 +2,8 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -47,5 +45,18 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+    function products(): HasMany
+    {
+        return $this->hasMany(Product::class, 'supplier_user_id', 'id');
+    }
+
+    function supplier_orders(): HasMany
+    {
+        return $this->hasMany(Order::class,'supplier_user_id','id');
+    }
+    function orders(): HasMany
+    {
+        return $this->belongsToMany(Order::class);
     }
 }
