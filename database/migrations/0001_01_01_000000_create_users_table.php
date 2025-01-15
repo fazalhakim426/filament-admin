@@ -84,8 +84,8 @@ return new class extends Migration
             $table->foreignId('category_id')->constrained('categories');
             $table->string('name');
             $table->text('description')->nullable();
-            $table->decimal('selling_price', 10, 2);
-            $table->decimal('price', 10, 2);
+            $table->decimal('selling_price', 10, 2); //The price at which the supplier sells the product.
+            $table->decimal('cost_price', 10, 2); //The price at which the supplier acquires the product 
             $table->decimal('referral_reward_amount', 10, 2)->nullable();
             $table->decimal('referral_reward_percentage', 10, 2)->nullable();
             $table->integer('stock_quantity');
@@ -97,7 +97,7 @@ return new class extends Migration
         });
 
         // Orders table
-        Schema::create('orders', function (Blueprint $table){
+        Schema::create('orders', function (Blueprint $table) {
             $table->id();
             $table->foreignId('customer_user_id')->constrained('users')->onDelete('cascade');
             $table->decimal('total_price', 10, 2);
@@ -112,7 +112,8 @@ return new class extends Migration
             $table->foreignId('product_id')->constrained('products');
             $table->foreignId('supplier_user_id')->constrained('users'); //for searching purpose the get saled items directly not through products and order.for future use.
             $table->integer('quantity');
-            $table->decimal('price', 10, 2);
+            $table->decimal('cost_price', 10, 2);
+            $table->decimal('selling_price', 10, 2); //To dedect profit made by suppliers.supplier cant updte this value need to create another product if selling value is different
         });
 
         // Referrals table

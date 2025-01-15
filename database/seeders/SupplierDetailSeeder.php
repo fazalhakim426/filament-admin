@@ -39,7 +39,7 @@ class SupplierDetailSeeder extends Seeder
                             'quantity' => $quantity,
                             'price' => number_format($totalPrice / $quantity, 2), // Random price for each product
                         ]
-                    );
+                    ); 
 
                     Deposit::factory()->create([
                         'user_id' => $user->id,
