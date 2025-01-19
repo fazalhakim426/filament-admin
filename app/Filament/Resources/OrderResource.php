@@ -20,6 +20,7 @@ class OrderResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-shopping-bag';
     protected static ?string $navigationGroup = 'Products & Orders';
+    
     public static function canCreate(): bool
     {
         return false;  

@@ -24,7 +24,11 @@ class ProductResource extends Resource
     protected static ?int $navigationSort = 2;
     protected static ?string $navigationGroup = 'Products & Orders';
     
-
+    protected function afterSave(): void
+    {
+        // Redirect to the index page
+        $this->redirect($this->getResource()::getUrl('index'));
+    }
 
     public static function form(Form $form): Form
     {

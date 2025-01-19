@@ -23,9 +23,10 @@ class InventoryMovementResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-archive-box';
     protected static ?string $navigationLabel = 'Inventory';
-    protected function afterSave()
-    { 
-       return $this->redirect($this->getResource()::getUrl('index'));
+    protected function afterSave(): void
+    {
+        // Redirect to the index page
+        $this->redirect($this->getResource()::getUrl('index'));
     }
     public static function form(Form $form): Form
     {

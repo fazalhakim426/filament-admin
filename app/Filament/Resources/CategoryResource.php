@@ -15,7 +15,11 @@ class CategoryResource extends Resource
     protected static ?string $model = Category::class;
     protected static ?string $navigationGroup = 'Settings';
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
-
+    protected function afterSave(): void
+    {
+        // Redirect to the index page
+        $this->redirect($this->getResource()::getUrl('index'));
+    }
 
     public static function form(Form $form): Form
     {
