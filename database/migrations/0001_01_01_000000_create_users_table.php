@@ -11,21 +11,24 @@ return new class extends Migration
 
         Schema::create('cities', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->string('name'); 
+            $table->softDeletes();
         });
 
         Schema::create('categories', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->text('description')->nullable();
-            $table->timestamps();
+            $table->text('description')->nullable(); 
+            $table->softDeletes();
+
         });
         // Roles Table
-        Schema::create('roles', function (Blueprint $table) {
-            $table->id();
-            $table->string('name')->unique();
-            $table->timestamps();
-        });
+        // Schema::create('roles', function (Blueprint $table) {
+        //     $table->id();
+        //     $table->string('name')->unique();
+        //     $table->text('description')->nullable();  
+        //     $table->timestamps();
+        // });
 
 
         // Users table
@@ -41,14 +44,13 @@ return new class extends Migration
             $table->foreignId('city_id')->nullable()->constrained('cities');
             $table->text('address')->nullable();
             $table->string('contact_number')->nullable();
-            $table->string('whatsapp_number')->nullable();
-            $table->foreignId('role_id')->constrained('roles');
+            $table->string('whatsapp_number')->nullable(); 
             $table->string('referral_code')->nullable()->unique();
             $table->decimal('balance', 10, 2)->default(0.00);
             $table->rememberToken();
             $table->softDeletes();
             $table->timestamps();
-            $table->index(['email', 'id', 'role_id']);
+            $table->index(['email', 'id']);
         });
 
         Schema::create('supplier_details', function (Blueprint $table) {
@@ -84,16 +86,24 @@ return new class extends Migration
             $table->foreignId('category_id')->constrained('categories');
             $table->string('name');
             $table->text('description')->nullable();
-            $table->decimal('selling_price', 10, 2); //The price at which the supplier sells the product.
-            $table->decimal('cost_price', 10, 2); //The price at which the supplier acquires the product 
             $table->decimal('referral_reward_amount', 10, 2)->nullable();
             $table->decimal('referral_reward_percentage', 10, 2)->nullable();
             $table->integer('stock_quantity');
+            $table->decimal('unit_selling_price', 10, 2); //current selling price
             $table->string('sku')->nullable();
             $table->boolean('is_active')->default(true);
             $table->softDeletes();
             $table->timestamps();
             $table->index(['id']);
+        });
+        Schema::create('inventory_movements', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('supplier_user_id')->constrained('users');
+            $table->foreignId('product_id')->constrained('products');
+            $table->enum('type', ['addition', 'deduction']); // Record whether stock is added or sold
+            $table->integer('quantity');
+            $table->decimal('unit_cost_price', 10, 2); 
+            $table->timestamps();
         });
 
         // Orders table
@@ -112,8 +122,10 @@ return new class extends Migration
             $table->foreignId('product_id')->constrained('products');
             $table->foreignId('supplier_user_id')->constrained('users'); //for searching purpose the get saled items directly not through products and order.for future use.
             $table->integer('quantity');
-            $table->decimal('cost_price', 10, 2);
-            $table->decimal('selling_price', 10, 2); //To dedect profit made by suppliers.supplier cant updte this value need to create another product if selling value is different
+            $table->decimal('profit', 10, 2); // ( unit_selling_price  - unit_cost_price ) * quantity
+            $table->decimal('price', 10, 2); //quantity * unit selling price 
+            $table->decimal('unit_cost_price', 10, 2);
+            $table->decimal('unit_selling_price', 10, 2); //To dedect profit made by suppliers.supplier cant updte this value need to create another product if selling value is different
         });
 
         // Referrals table
@@ -187,6 +199,7 @@ return new class extends Migration
         Schema::dropIfExists('deposits');
         Schema::dropIfExists('referrals');
         Schema::dropIfExists('order_items');
+        Schema::dropIfExists('inventory_movements');
         Schema::dropIfExists('orders');
         Schema::dropIfExists('products');
         Schema::dropIfExists('supplier_details');

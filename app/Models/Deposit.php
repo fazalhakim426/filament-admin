@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class Deposit extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
     protected $fillable = [
         'user_id',
         'order_id',
@@ -25,24 +27,25 @@ class Deposit extends Model
     protected static function booted()
     {
         static::created(function ($deposit) {
-            $deposit->adjustBalance($deposit->amount);
+            $deposit->transaction_reference = 'TRX-' . strtoupper(Str::random(10));
+            $adjustment = $deposit->transaction_type == 'credit' ? $deposit->amount : -$deposit->amount;
+            $deposit->update(['balance' => $deposit->user->balance + $adjustment]);
+            $deposit->user->update(['balance' => $deposit->user->balance + $adjustment]);
         });
         static::deleted(function ($deposit) {
-            $deposit->adjustBalance(-$deposit->amount);
+            $adjustment = $deposit->transaction_type == 'credit' ? $deposit->amount : -$deposit->amount;
+            $adjustment = $adjustment * -1;
+            $deposit->update(['balance' => $deposit->user->balance + $adjustment]);
+            $deposit->user->update(['balance' => $deposit->user->balance + $adjustment]);
         });
     }
-
-    protected function adjustBalance($adjustment)
+    function order()
     {
-        $this->update(['balance' => $this->user->balance + $adjustment]);
-        $this->user->update(['balance' => $this->user->balance + $adjustment]);
-    }
-    function order() {
         return $this->belongsTo(Order::class, 'order_id', 'id');
     }
-     
-    function referrel() {
+
+    function referrel()
+    {
         return $this->belongsTo(Referral::class, 'referrel_id', 'id');
     }
-    
 }

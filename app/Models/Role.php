@@ -2,12 +2,12 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Spatie\Permission\Models\Role as ModelsRole;
 
-class Role extends Model
+class Role extends ModelsRole
 {
-    protected $fillable = ['name'];
-    public function users() {
-        return $this->hasMany(User::class);
-    }
+    use HasFactory;
+
+    protected $guard_name = ['web', 'api']; // Supports both web and api guards
 }

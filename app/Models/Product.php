@@ -30,5 +30,14 @@ class Product extends Model
     {
         return $this->morphMany(Image::class, 'imageable');
     }
+    protected static function booted()
+    {
+        static::deleted(function ($product) {
+            $product->images()->each(function ($image) {
+                \Storage::disk('public')->delete($image->url); // Delete the image file
+                $image->delete(); // Delete the image record
+            });
+        });
+    }
 
 }

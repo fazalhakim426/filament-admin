@@ -20,27 +20,27 @@ class ProductResource extends Resource
 {
     protected static ?string $model = Product::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-archive-box';
+    protected static ?int $navigationSort = 2;
+    protected static ?string $navigationGroup = 'Products & Orders';
+    
+
 
     public static function form(Form $form): Form
     {
 
         return $form
             ->schema([
-                Select::make('supplier_id')
-                    ->label('Category')
-                    ->relationship('category', 'name')
-                    ->createOptionForm([
-                        TextInput::make('name')
-                            ->required()
-                            ->maxLength(255),
-                        TextInput::make('description')
-                            ->required()
-                            ->maxLength(255),
-                    ])
+                Select::make('supplier_user_id')
+                    ->label('Supplier')
+                    ->relationship('supplierUser', 'name')
+                    ->searchable() 
+                    ->preload()
                     ->required(),
                 Select::make('category_id')
                     ->label('Category')
+                    ->preload()
+                    ->searchable()
                     ->relationship('category', 'name')
                     ->createOptionForm([
                         TextInput::make('name')
@@ -55,11 +55,8 @@ class ProductResource extends Resource
                     ->columnSpanFull(),
                 Forms\Components\TextInput::make('name')
                     ->required()
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('selling_price')
-                    ->required()
-                    ->numeric(),
-                Forms\Components\TextInput::make('price')
+                    ->maxLength(255), 
+                Forms\Components\TextInput::make('unit_selling_price')
                     ->required()
                     ->numeric()
                     ->prefix('$'),
@@ -78,25 +75,25 @@ class ProductResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('supplier.user.name')
+                Tables\Columns\TextColumn::make('supplierUser.name')
                     ->label('Supplier')
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('name')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('selling_price')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('price')
+                    ->searchable(), 
+                Tables\Columns\TextColumn::make('unit_selling_price')
+                    ->label('Selling')
                     ->money()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('stock_quantity')
+                    ->label('Quantity')
                     ->numeric()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('sku')
                     ->label('SKU')
                     ->searchable(),
                 Tables\Columns\IconColumn::make('is_active')
+                    ->label('Active')
                     ->boolean(),
                 Tables\Columns\TextColumn::make('category.name')
                     ->label('Category')
@@ -110,7 +107,6 @@ class ProductResource extends Resource
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-
             ])
             ->filters([
                 //

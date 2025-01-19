@@ -12,6 +12,6 @@ class Customer extends Model
         return $this->hasMany(Order::class);
     }
     function suppliers() {
-        return $this->belongsToMany(Supplier::class, 'orders', 'customer_id', 'supplier_id');
+        return $this->belongsToMany(User::class, 'orders', 'customer_user_id', 'supplier_user_id');
     }
 }

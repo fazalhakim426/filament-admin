@@ -27,8 +27,7 @@ class ProductFactory extends Factory
         return [
             'name' => $this->faker->words(2, true), // Random product name
             'description' => $this->faker->sentence(), // Random description
-            'selling_price' =>number_format($price - $percentage?($price/20):30), // Random price between 50 and 500
-            'price' => $price, // Random price between 40 and 400
+            'unit_selling_price' => $price, // Random price between 40 and 400
             'stock_quantity' => $this->faker->numberBetween(1, 100), // Random stock quantity
             'sku' => $this->faker->unique()->lexify('P????'), // Unique SKU
             'category_id' => Category::inRandomOrder()->first()->id, // Random category
