@@ -11,16 +11,15 @@ return new class extends Migration
 
         Schema::create('cities', function (Blueprint $table) {
             $table->id();
-            $table->string('name'); 
+            $table->string('name');
             $table->softDeletes();
         });
 
         Schema::create('categories', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->text('description')->nullable(); 
+            $table->text('description')->nullable();
             $table->softDeletes();
-
         });
         // Roles Table
         // Schema::create('roles', function (Blueprint $table) {
@@ -44,7 +43,7 @@ return new class extends Migration
             $table->foreignId('city_id')->nullable()->constrained('cities');
             $table->text('address')->nullable();
             $table->string('contact_number')->nullable();
-            $table->string('whatsapp_number')->nullable(); 
+            $table->string('whatsapp_number')->nullable();
             $table->string('referral_code')->nullable()->unique();
             $table->decimal('balance', 10, 2)->default(0.00);
             $table->rememberToken();
@@ -102,13 +101,14 @@ return new class extends Migration
             $table->foreignId('product_id')->constrained('products');
             $table->enum('type', ['addition', 'deduction']); // Record whether stock is added or sold
             $table->integer('quantity');
-            $table->decimal('unit_cost_price', 10, 2); 
+            $table->decimal('unit_cost_price', 10, 2);
             $table->timestamps();
         });
 
         // Orders table
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
+            $table->string('warehouse_number');
             $table->foreignId('customer_user_id')->constrained('users')->onDelete('cascade');
             $table->decimal('total_price', 10, 2);
             $table->enum('status', ['pending', 'confirmed', 'shipped', 'delivered', 'canceled'])->default('pending');

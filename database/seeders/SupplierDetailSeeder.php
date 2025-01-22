@@ -19,6 +19,7 @@ class SupplierDetailSeeder extends Seeder
     {
         SupplierDetail::factory(10)->create()->each(function ($supplierDetail) {
             // Create products for the supplier
+            $supplierDetail->user->assignRole('supplier');
             $supplierDetail->user->products()->createMany(
                 Product::factory()->count(7)->make()->toArray()
             )->each(function ($product) use ($supplierDetail){

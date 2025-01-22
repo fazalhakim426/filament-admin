@@ -1,8 +1,9 @@
 <?php
+
 namespace Database\Factories;
 
 use App\Models\User;
-use App\Models\Category; 
+use App\Models\Category;
 use App\Models\Role;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -25,13 +26,13 @@ class SupplierDetailFactory extends Factory
     {
         // ['role_id' => Role::where('name', 'supplier')->first()->id]
         return [
-            'user_id' => User::factory(),  
+            'user_id' => User::factory([['email' => 'supplier@manzil.com']]),
             'business_name' => $this->faker->company(),
             'contact_person' => $this->faker->name(),
             'website' => $this->faker->url(),
             'supplier_type' => $this->faker->randomElement(['wholesale', 'retail', 'distributor']),
-            'main_category_id' => Category::inRandomOrder()->first()->id ,
-            'secondary_category_id' => Category::inRandomOrder()->first()->id,  
+            'main_category_id' => Category::inRandomOrder()->first()->id,
+            'secondary_category_id' => Category::inRandomOrder()->first()->id,
             'product_available' => $this->faker->numberBetween(1, 100),
             'product_source' => $this->faker->randomElement(['imported', 'local']),
             'product_unit_quality' => $this->faker->word(),
@@ -41,7 +42,7 @@ class SupplierDetailFactory extends Factory
             'daraz_url' => $this->faker->url(),
             'ecommerce_experience' => $this->faker->randomElement(['none', '1-3 years', '3-5 years', '5+ years']),
             'term_agreed' => $this->faker->boolean(),
-            'marketing_type' => $this->faker->randomElement([1, 2, 3]), 
+            'marketing_type' => $this->faker->randomElement([1, 2, 3]),
             'preferred_contact_time' => $this->faker->optional()->dateTimeThisYear(),
         ];
     }
