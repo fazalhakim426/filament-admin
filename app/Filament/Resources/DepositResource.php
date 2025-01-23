@@ -108,8 +108,7 @@ class DepositResource extends Resource
             ->filters([
                 //
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
+            ->actions([ 
                 Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([

@@ -28,14 +28,22 @@ class InventoryMovementResource extends Resource
     {
         return $form
             ->schema([
-                // Select supplier
+                
+            \Filament\Forms\Components\View::make('forms.inventory-guide')
+            ->columnSpan('full'), // Span across the full width of the form
+
                 Select::make('supplier_user_id')
                     ->label('Supplier')
-                    ->relationship('supplierUser', 'name') // Assuming the User model has a `name` field
+                    ->relationship('supplierUser', 'name', function (Builder $query) {
+                        // Filter users with the 'Supplier' role
+                        $query->whereHas('roles', function ($query) {
+                            $query->where('name', 'Supplier'); // Assuming your roles are stored by name
+                        });
+                    })
                     ->required()
                     ->preload()
                     ->searchable()
-                    ->reactive() // Make it reactive to update products dynamically
+                    ->reactive()
 
                     ->afterStateUpdated(function (callable $set) {
                         // Reset the product field when supplier changes
@@ -90,10 +98,8 @@ class InventoryMovementResource extends Resource
                 TextColumn::make('supplierUser.name')
                     ->label('Supplier')
                     ->searchable(),
-                    TextColumn::make('product.name')
-                        ->searchable(),
-
-
+                TextColumn::make('product.name')
+                    ->searchable(),
                 TextColumn::make('quantity')
                     ->numeric()
                     ->sortable(),

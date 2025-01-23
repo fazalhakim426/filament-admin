@@ -21,23 +21,24 @@ class ProductResource extends Resource
     protected static ?string $model = Product::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-archive-box';
-    protected static ?int $navigationSort = 2;
+    // protected static ?int $navigationSort = 2;
     protected static ?string $navigationGroup = 'Products & Orders';
     
-    protected function afterSave(): void
-    {
-        // Redirect to the index page
-        $this->redirect($this->getResource()::getUrl('index'));
-    }
+   
 
     public static function form(Form $form): Form
     {
-
         return $form
             ->schema([
+                
                 Select::make('supplier_user_id')
                     ->label('Supplier')
-                    ->relationship('supplierUser', 'name')
+                    ->relationship('supplierUser', 'name', function (Builder $query) {
+                        // Filter users with the 'Supplier' role
+                        $query->whereHas('roles', function ($query) {
+                            $query->where('name', 'Supplier'); // Assuming your roles are stored by name
+                        });
+                    })
                     ->searchable() 
                     ->preload()
                     ->required(),
@@ -64,9 +65,6 @@ class ProductResource extends Resource
                     ->required()
                     ->numeric()
                     ->prefix('$'),
-                Forms\Components\TextInput::make('stock_quantity')
-                    ->required()
-                    ->numeric(),
                 Forms\Components\TextInput::make('sku')
                     ->label('SKU')
                     ->maxLength(255),
@@ -126,19 +124,10 @@ class ProductResource extends Resource
             ]);
     }
 
-    public static function getRelations(): array
-    {
-        return [
-            //
-        ];
-    }
-
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListProducts::route('/'),
-            'create' => Pages\CreateProduct::route('/create'),
-            'edit' => Pages\EditProduct::route('/{record}/edit'),
+            'index' => Pages\ManageProducts::route('/'),
         ];
     }
 }

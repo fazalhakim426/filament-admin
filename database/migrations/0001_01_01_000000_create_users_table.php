@@ -87,7 +87,7 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->decimal('referral_reward_amount', 10, 2)->nullable();
             $table->decimal('referral_reward_percentage', 10, 2)->nullable();
-            $table->integer('stock_quantity');
+            $table->integer('stock_quantity')->default(0);
             $table->decimal('unit_selling_price', 10, 2); //current selling price
             $table->string('sku')->nullable();
             $table->boolean('is_active')->default(true);
@@ -102,6 +102,7 @@ return new class extends Migration
             $table->enum('type', ['addition', 'deduction']); // Record whether stock is added or sold
             $table->integer('quantity');
             $table->decimal('unit_cost_price', 10, 2);
+            $table->string('description');
             $table->timestamps();
         });
 

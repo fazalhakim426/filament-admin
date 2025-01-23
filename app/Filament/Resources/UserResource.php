@@ -36,7 +36,11 @@ class UserResource extends Resource
                 TextInput::make('email')->email()->required()
                     ->label('Email'),
 
-                FileUpload::make('profile_photo_path'),
+                FileUpload::make('profile_photo_path')
+                ->directory('images') // Stored in storage/app/public/images
+                ->disk('public')      // Use the public disk
+                ->visibility('public')
+                ,
                 Forms\Components\Textarea::make('address')
                     ->columnSpanFull(),
 
@@ -46,19 +50,19 @@ class UserResource extends Resource
                 Forms\Components\TextInput::make('whatsapp_number')
                     ->maxLength(15),
 
-                Forms\Components\Select::make('roles')
-                    ->relationship(name: 'roles', titleAttribute: 'name')
-                    ->saveRelationshipsUsing(function (Model $record, $state) {
-                        $record->roles()->syncWithPivotValues($state, [config('permission.column_names.team_foreign_key') => getPermissionsTeamId()]);
-                    })
-                    ->multiple()
-                    ->preload()
-                    ->searchable(),
                 Select::make('city_id')
                     ->label('City')
                     ->relationship(name: 'city', titleAttribute: 'name'),
                 Forms\Components\Toggle::make('active')
-                    ->required()
+                    ->required(),
+                    Forms\Components\Select::make('roles')
+                    ->relationship(name: 'roles', titleAttribute: 'name')
+                    ->saveRelationshipsUsing(function (Model $record, $state) { 
+                        $record->roles()->sync($state);
+                    })
+                    ->multiple()
+                    ->preload()
+                    ->searchable(),
             ]);
     }
 
