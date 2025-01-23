@@ -23,50 +23,82 @@ class InventoryMovementResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-archive-box';
     protected static ?string $navigationLabel = 'Inventory';
-    protected function afterSave(): void
-    {
-        // Redirect to the index page
-        $this->redirect($this->getResource()::getUrl('index'));
-    }
+
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Select::make('product_id')
-                    ->relationship('product', 'name')
+                // Select supplier
+                Select::make('supplier_user_id')
+                    ->label('Supplier')
+                    ->relationship('supplierUser', 'name') // Assuming the User model has a `name` field
                     ->required()
                     ->preload()
-                    ->searchable(),
-                    Select::make('type')
+                    ->searchable()
+                    ->reactive() // Make it reactive to update products dynamically
+
+                    ->afterStateUpdated(function (callable $set) {
+                        // Reset the product field when supplier changes
+                        $set('product_id', null);
+                    }),
+
+                // Select product based on supplier
+                Select::make('product_id')
+                    ->label('Product')
+                    ->required()
+                    ->options(function (callable $get) {
+                        $supplierId = $get('supplier_user_id');
+                        if ($supplierId) {
+                            // Fetch products related to the selected supplier
+                            return \App\Models\Product::where('supplier_user_id', $supplierId)
+                                ->pluck('name', 'id');
+                        }
+                        return []; // Return empty options if no supplier selected
+                    })
+                    ->searchable()
+                    ->preload(),
+
+                // Transaction Type
+                Select::make('type')
                     ->label('Transaction Type')
                     ->required()
-                    ->options([ 
+                    ->options([
                         'addition' => 'Addition',
                         'deduction' => 'Deduction',
                     ])
                     ->default('addition'),
+
+                // Quantity
                 TextInput::make('quantity')
+                    ->label('Quantity')
                     ->required()
                     ->numeric(),
+
+                // Unit Cost Price
                 TextInput::make('unit_cost_price')
+                    ->label('Unit Cost Price')
                     ->required()
-                    ->numeric()
+                    ->numeric(),
             ]);
     }
+
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                TextColumn::make('product.name')
+                TextColumn::make('supplierUser.name')
+                    ->label('Supplier')
                     ->searchable(),
-                
-             
-                    TextColumn::make('quantity')
+                    TextColumn::make('product.name')
+                        ->searchable(),
+
+
+                TextColumn::make('quantity')
                     ->numeric()
                     ->sortable(),
-                    TextColumn::make('type')
-                        ->sortable(),
+                TextColumn::make('type')
+                    ->sortable(),
                 TextColumn::make('unit_cost_price')
                     ->label('Unit Cost')
                     ->numeric()
@@ -85,6 +117,7 @@ class InventoryMovementResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -93,19 +126,10 @@ class InventoryMovementResource extends Resource
             ]);
     }
 
-    public static function getRelations(): array
-    {
-        return [
-            //
-        ];
-    }
-
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListInventoryMovements::route('/'),
-            'create' => Pages\CreateInventoryMovement::route('/create'),
-            'edit' => Pages\EditInventoryMovement::route('/{record}/edit'),
+            'index' => Pages\ManageInventoryMovements::route('/'),
         ];
     }
 }

@@ -44,12 +44,13 @@ class OrderResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('warehouse_number'),
                 Tables\Columns\TextColumn::make('customerUser.name')
                     ->numeric()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('total_price')
                     ->label('Price')
-                    ->numeric()
+                    ->prefix("RS ")
                     ->sortable(),
                 Tables\Columns\TextColumn::make('status'),
                 Tables\Columns\TextColumn::make('created_at')

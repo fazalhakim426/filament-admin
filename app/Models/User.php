@@ -9,7 +9,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
-
+use Illuminate\Support\Facades\Hash;
 class User extends Authenticatable
 {
     use HasRoles,HasApiTokens;
@@ -67,6 +67,15 @@ class User extends Authenticatable
     
     function city(){
         return $this->belongsTo(City::class);
+    }
+    
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($user) {
+            $user->password = Hash::make('password');
+        });
     }
 
 }

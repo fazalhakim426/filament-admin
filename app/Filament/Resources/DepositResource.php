@@ -21,11 +21,6 @@ class DepositResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-currency-dollar';
     protected static ?string $navigationGroup = 'Financial';
 
-    protected function afterSave(): void
-    {
-        // Redirect to the index page
-        $this->redirect($this->getResource()::getUrl('index'));
-    }
     public static function form(Form $form): Form
     {
         return $form
@@ -72,6 +67,7 @@ class DepositResource extends Resource
     {
         return $table
             ->columns([
+                
                 Tables\Columns\TextColumn::make('user.email')
                     ->label('Email')
                     ->searchable(),
@@ -106,26 +102,27 @@ class DepositResource extends Resource
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
+           
+                //
             ])
-            ->filters([])
-            ->actions([])
-            ->bulkActions([]);
-    }
-
-    public static function getEloquentQuery(): Builder
-    {
-        return parent::getEloquentQuery()
-            ->withoutGlobalScopes([
-                SoftDeletingScope::class,
+            ->filters([
+                //
+            ])
+            ->actions([
+                Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
             ]);
     }
 
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListDeposits::route('/'),
-            'create' => Pages\CreateDeposit::route('/create'),
-            // 'edit' => Pages\EditDeposit::route('/{record}/edit'),
+            'index' => Pages\ManageDeposits::route('/'),
         ];
     }
 }

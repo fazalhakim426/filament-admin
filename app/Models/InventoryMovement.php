@@ -9,7 +9,15 @@ use Illuminate\Support\Facades\Log;
 class InventoryMovement extends Model
 {
     use HasFactory;
-
+    protected $fillable = ['type', 'stock_quantity', 'product_id', 'type', 'stock_quantity', 'unit_cost_price'];
+    function product()
+    {
+        return $this->belongsTo(Product::class);
+    } 
+    function supplierUser()
+    {
+        return $this->belongsTo(User::class,'supplier_user_id');
+    }
     protected static function booted()
     {
         static::creating(function ($inventoryMovement) {
@@ -70,9 +78,5 @@ class InventoryMovement extends Model
         });
     }
 
-    protected $fillable = ['type', 'stock_quantity', 'product_id', 'type', 'stock_quantity', 'unit_cost_price'];
-    function product()
-    {
-        return $this->belongsTo(Product::class);
-    }
+  
 }
