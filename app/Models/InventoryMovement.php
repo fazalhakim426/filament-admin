@@ -42,7 +42,7 @@ class InventoryMovement extends Model
               
                 if ($inventoryMovement->type == 'addition') {  
                     if ($product->stock_quantity < $inventoryMovement->quantity) {
-                        throw new \Exception('Stock already sold.');
+                        throw new \Exception('Not enough stock.');
                     }
                     $product->update(['stock_quantity' => ($product->stock_quantity - $inventoryMovement->quantity)]);
                 } elseif ($inventoryMovement->type == 'deduction') {

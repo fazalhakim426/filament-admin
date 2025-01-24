@@ -20,10 +20,18 @@ class OrderResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-shopping-bag';
     protected static ?string $navigationGroup = 'Products & Orders';
+    protected static ?string $recordTitleAttribute = 'number';
     
     public static function canCreate(): bool
     {
         return false;  
+    }
+    public static function getNavigationBadge(): ?string
+    {
+        /** @var class-string<Model> $modelClass */
+        $modelClass = static::$model;
+
+        return (string) $modelClass::where('status', 'shipped')->count();
     }
     public static function form(Form $form): Form
     {
@@ -52,7 +60,8 @@ class OrderResource extends Resource
                     ->label('Price')
                     ->prefix("RS ")
                     ->sortable(),
-                Tables\Columns\TextColumn::make('status'),
+                Tables\Columns\TextColumn::make('status')
+                ->badge(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()

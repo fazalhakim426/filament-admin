@@ -28,14 +28,13 @@ class InventoryMovementResource extends Resource
     {
         return $form
             ->schema([
-                
-            \Filament\Forms\Components\View::make('forms.inventory-guide')
-            ->columnSpan('full'), // Span across the full width of the form
+
+                \Filament\Forms\Components\View::make('forms.inventory-guide')
+                    ->columnSpan('full'), // Span across the full width of the form
 
                 Select::make('supplier_user_id')
                     ->label('Supplier')
                     ->relationship('supplierUser', 'name', function (Builder $query) {
-                        // Filter users with the 'Supplier' role
                         $query->whereHas('roles', function ($query) {
                             $query->where('name', 'Supplier'); // Assuming your roles are stored by name
                         });
@@ -104,6 +103,9 @@ class InventoryMovementResource extends Resource
                     ->numeric()
                     ->sortable(),
                 TextColumn::make('type')
+                    ->badge()
+                    ->color(fn ($record) => $record->type === 'deduction' ? 'danger' : 'primary') // Conditional badge color
+              
                     ->sortable(),
                 TextColumn::make('unit_cost_price')
                     ->label('Unit Cost')

@@ -82,7 +82,11 @@ class DepositResource extends Resource
                 Tables\Columns\TextColumn::make('amount')
                     ->numeric()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('transaction_type'),
+                Tables\Columns\TextColumn::make('transaction_type') 
+                ->badge()
+                ->label('Type')
+                ->color(fn ($record) => $record->transaction_type === 'credit' ? 'success' : 'danger') // Conditional badge color
+                ,
                 Tables\Columns\TextColumn::make('deposit_type')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('balance')

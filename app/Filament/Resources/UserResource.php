@@ -100,7 +100,11 @@ class UserResource extends Resource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('roles')
-                    ->label('Roles')
+                ->badge()
+                ->formatStateUsing(fn ($state) => is_array($state) ? implode(', ', $state) : $state) // Combine roles as a comma-separated string
+                ->color('primary') // Optional: Set a default color for badges
+                ->extraAttributes(['class' => 'space-x-1']) // Adds spacing between badges
+             
                     ->getStateUsing(fn(User $record) => $record->roles->pluck('name')->join(', ')), // Fetch roles and join them as a string
 
             ])
