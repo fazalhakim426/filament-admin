@@ -8,56 +8,253 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Password;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\UserResource;
+use App\Models\SupplierDetail;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
-
-
+use Illuminate\Support\Str;
 use OpenApi\Annotations as OA;
 
 class AuthController extends Controller
 {
     /**
      * @OA\Post(
-     *     path="/register",
-     *     summary="Register a new user",
-     *     tags={"Authentication"},
+     *     path="/register-customer",
+     *     summary="Register a new customer",
+     *     description="Register a new customer and assign the 'Customer' role.",
+     *     tags={"Customer"},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
      *             required={"name", "email", "password", "password_confirmation"},
-     *             @OA\Property(property="name", type="string", example="John Doe"),
-     *             @OA\Property(property="email", type="string", format="email", example="john.doe@example.com"),
-     *             @OA\Property(property="password", type="string", format="password", example="password123"),
-     *             @OA\Property(property="password_confirmation", type="string", format="password", example="password123")
+     *             @OA\Property(property="name", type="string", example="John Yar", description="Customer's full name"),
+     *             @OA\Property(property="email", type="string", format="email", example="customer33@manzil.comd", description="Customer's email address"),
+     *             @OA\Property(property="city_id", type="string", example="1", description="City ID (optional, must exist in cities table)"),
+     *             @OA\Property(property="contact_number", type="string", example="+123456789", description="Customer's contact number (optional)"),
+     *             @OA\Property(property="whatsapp_number", type="string", example="+987654321", description="Customer's WhatsApp number (optional)"),
+     *             @OA\Property(property="address", type="string", example="123 Customer Street", description="Customer's address (optional)"),
+     *             @OA\Property(property="password", type="string", format="password", example="password123", description="Password (minimum 8 characters)"),
+     *             @OA\Property(property="password_confirmation", type="string", format="password", example="password123", description="Password confirmation")
      *         )
-     *     ), 
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Customer successfully registered",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Customer successfully registered"),
+     *             @OA\Property(property="user", type="object",
+     *                 @OA\Property(property="id", type="integer", example=75),
+     *                 @OA\Property(property="name", type="string", example="John Yar"),
+     *                 @OA\Property(property="email", type="string", format="email", example="customer33@manzil.comd"),
+     *                 @OA\Property(property="email_verified_at", type="string", format="nullable", example=null),
+     *                 @OA\Property(property="roles", type="array", 
+     *                     @OA\Items(type="string", example="Customer")
+     *                 ),
+     *                 @OA\Property(property="created_at", type="string", example="0 seconds ago"),
+     *                 @OA\Property(property="updated_at", type="string", example="0 seconds ago")
+     *             )
+     *         )
+     *     ),
      *     @OA\Response(
      *         response=422,
      *         description="Validation errors",
      *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="The given data was invalid."),
+     *             @OA\Property(property="errors", type="object",
+     *                 additionalProperties=@OA\Property(type="array", @OA\Items(type="string", example="The name field is required."))
+     *             )
+     *         )
+     *     )
+     * )
+     */
+
+    public function registerCustomer(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'city_id' => 'nullable|string|max:255|exists:cities,id',
+            'contact_number' => 'nullable|string|max:25',
+            'whatsapp_number' => 'nullable|string|max:25',
+            'address' => 'nullable|string|max:255',
+            'password' => 'required|string|confirmed|min:8',
+        ]);
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'referral_code' => Str::upper(Str::random(8)),
+            'city_id' => $request->city_id,
+            'contact_number' => $request->contact_number,
+            'whatsapp_number' => $request->whatsapp_number,
+            'address' => $request->address,
+
+        ]);
+        $user->assignRole('customer');
+        return response()->json([
+            'message' => 'Customer successfully registered',
+            'user' => new UserResource($user)
+        ]);
+    }
+    /**
+     * @OA\Post(
+     *     path="/register-supplier",
+     *     summary="Register a new supplier",
+     *     description="This endpoint registers a new supplier with both user and supplier-specific details.",
+     *     tags={"Supplier"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="name", type="string", description="User's full name", example="John Doe"),
+     *             @OA\Property(property="email", type="string", format="email", description="User's email address", example="john.doe@example.com"),
+     *             @OA\Property(property="city_id", type="string", nullable=true, description="City ID associated with the user", example="1"),
+     *             @OA\Property(property="contact_number", type="string", nullable=true, description="Contact number of the user", example="123456789"),
+     *             @OA\Property(property="whatsapp_number", type="string", nullable=true, description="WhatsApp number of the user", example="987654321"),
+     *             @OA\Property(property="address", type="string", nullable=true, description="Address of the user", example="123 Main Street"),
+     *             @OA\Property(property="password", type="string", description="User's password (min: 8 characters)", example="securepassword123"),
+     *             @OA\Property(property="password_confirmation", type="string", description="Confirmation of the password", example="securepassword123"),
+     *             @OA\Property(property="business_name", type="string", description="Supplier's business name", example="John Supplies"),
+     *             @OA\Property(property="contact_person", type="string", nullable=true, description="Contact person for the supplier", example="John Contact"),
+     *             @OA\Property(property="website", type="string", format="url", nullable=true, description="Supplier's website", example="https://johnsupplies.com"),
+     *             @OA\Property(property="supplier_type", type="string", nullable=true, description="Type of supplier", example="Retail"),
+     *             @OA\Property(property="main_category_id", type="integer", nullable=true, description="ID of the main product category", example=5),
+     *             @OA\Property(property="secondary_category_id", type="integer", nullable=true, description="ID of the secondary product category", example=10),
+     *             @OA\Property(property="product_available", type="integer", nullable=true, description="Quantity of products available", example=100),
+     *             @OA\Property(property="product_source", type="string", nullable=true, description="Source of the products", example="Local"),
+     *             @OA\Property(property="product_unit_quality", type="string", nullable=true, description="Quality of the product units", example="High"),
+     *             @OA\Property(property="self_listing", type="boolean", nullable=true, description="Indicates if the supplier lists products themselves", example=false),
+     *             @OA\Property(property="product_range", type="string", nullable=true, description="Range of products offered", example="Wide"),
+     *             @OA\Property(property="using_daraz", type="boolean", nullable=true, description="Indicates if the supplier uses Daraz for selling", example=false),
+     *             @OA\Property(property="daraz_url", type="string", format="url", nullable=true, description="Daraz profile URL", example="https://daraz.pk/johnsupplies"),
+     *             @OA\Property(property="ecommerce_experience", type="string", nullable=true, description="Supplier's e-commerce experience", example="5 years"),
+     *             @OA\Property(property="term_agreed", type="boolean", nullable=true, description="Indicates if the supplier has agreed to terms", example=true),
+     *             @OA\Property(property="marketing_type", type="string", nullable=true, description="Type of marketing used by the supplier", example="Online"),
+     *             @OA\Property(property="preferred_contact_time", type="string", format="datetime", nullable=true, description="Preferred time for contact", example="2025-01-25 10:00:00")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Supplier successfully registered",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Supplier successfully registered"),
+     *             @OA\Property(
+     *                 property="user",
+     *                 type="object",
+     *                 @OA\Property(property="id", type="integer", example=74),
+     *                 @OA\Property(property="name", type="string", example="John Doe"),
+     *                 @OA\Property(property="email", type="string", example="fff@rrrrr.ffddje"),
+     *                 @OA\Property(property="email_verified_at", type="string", nullable=true, example=null),
+     *                 @OA\Property(property="roles", type="array", @OA\Items(type="string"), example={"Supplier"}),
+     *                 @OA\Property(property="created_at", type="string", example="0 seconds ago"),
+     *                 @OA\Property(property="updated_at", type="string", example="0 seconds ago"),
+     *                 @OA\Property(
+     *                     property="supplier_detail",
+     *                     type="object",
+     *                     @OA\Property(property="business_name", type="string", example="John Supplies"),
+     *                     @OA\Property(property="contact_person", type="string", example="John Contact"),
+     *                     @OA\Property(property="website", type="string", example="https://johnsupplies.com"),
+     *                     @OA\Property(property="supplier_type", type="string", example="Retail"),
+     *                     @OA\Property(property="main_category_id", type="integer", example=5),
+     *                     @OA\Property(property="secondary_category_id", type="integer", example=10),
+     *                     @OA\Property(property="product_available", type="integer", example=100),
+     *                     @OA\Property(property="product_source", type="string", example="Local"),
+     *                     @OA\Property(property="product_unit_quality", type="string", example="High"),
+     *                     @OA\Property(property="self_listing", type="boolean", example=false),
+     *                     @OA\Property(property="product_range", type="string", example="Wide"),
+     *                     @OA\Property(property="using_daraz", type="boolean", example=false),
+     *                     @OA\Property(property="daraz_url", type="string", example="https://daraz.pk/johnsupplies"),
+     *                     @OA\Property(property="ecommerce_experience", type="string", example="5 years"),
+     *                     @OA\Property(property="term_agreed", type="boolean", example=true),
+     *                     @OA\Property(property="marketing_type", type="string", example="Online"),
+     *                     @OA\Property(property="preferred_contact_time", type="string", format="datetime", example="2025-01-25 10:00:00")
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="The given data was invalid."),
      *             @OA\Property(property="errors", type="object")
      *         )
      *     )
      * )
      */
-    public function register(Request $request)
+    public function registerSupplier(Request $request)
     {
         $request->validate([
+            // User validation
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
+            'city_id' => 'nullable|string|max:255|exists:cities,id',
+            'contact_number' => 'nullable|string|max:25',
+            'whatsapp_number' => 'nullable|string|max:25',
+            'address' => 'nullable|string|max:255',
             'password' => 'required|string|confirmed|min:8',
+
+            // Supplier validation (all nullable)
+            'business_name' => 'required|string|max:255',
+            'contact_person' => 'nullable|string|max:255',
+            'website' => 'nullable|url',
+            'supplier_type' => 'nullable|string|max:255',
+            'main_category_id' => 'nullable|exists:categories,id',
+            'secondary_category_id' => 'nullable|exists:categories,id',
+            'product_available' => 'nullable|integer|min:0',
+            'product_source' => 'nullable|string|max:255',
+            'product_unit_quality' => 'nullable|string|max:255',
+            'self_listing' => 'nullable|boolean',
+            'product_range' => 'nullable|string|max:255',
+            'using_daraz' => 'nullable|boolean',
+            'daraz_url' => 'nullable|url',
+            'ecommerce_experience' => 'nullable|string|max:255',
+            'term_agreed' => 'nullable|boolean',
+            'marketing_type' => 'nullable|string|max:255',
+            'preferred_contact_time' => 'nullable|date',
         ]);
 
+        // Create the user
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'referral_code' => Str::upper(Str::random(8)),
+            'city_id' => $request->city_id,
+            'contact_number' => $request->contact_number,
+            'whatsapp_number' => $request->whatsapp_number,
+            'address' => $request->address,
+        ]);
+        $user->assignRole('supplier');
+
+        // Create supplier details
+        SupplierDetail::create([
+            'user_id' => $user->id,
+            'business_name' => $request->business_name,
+            'contact_person' => $request->contact_person,
+            'website' => $request->website,
+            'supplier_type' => $request->supplier_type,
+            'main_category_id' => $request->main_category_id,
+            'secondary_category_id' => $request->secondary_category_id,
+            'product_available' => $request->product_available,
+            'product_source' => $request->product_source,
+            'product_unit_quality' => $request->product_unit_quality,
+            'self_listing' => $request->self_listing,
+            'product_range' => $request->product_range,
+            'using_daraz' => $request->using_daraz,
+            'daraz_url' => $request->daraz_url,
+            'ecommerce_experience' => $request->ecommerce_experience,
+            'term_agreed' => $request->term_agreed,
+            'marketing_type' => $request->marketing_type,
+            'preferred_contact_time' => $request->preferred_contact_time,
         ]);
 
         return response()->json([
-            'message' => 'User successfully registered',
-            'user' => $user
+            'message' => 'Supplier successfully registered',
+            'user' => new UserResource($user->refresh()),
         ]);
     }
 

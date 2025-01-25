@@ -4,18 +4,20 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Resources\UserResource;
 use App\Models\User;
 
 Route::middleware(['auth:sanctum'],)->get('/user', function (Request $request) {
     return $request->user();
 });
-Route::post('register', [AuthController::class, 'register']);
+Route::post('register-customer', [AuthController::class, 'registerCustomer']);
+Route::post('register-supplier', [AuthController::class, 'registerSupplier']);
 Route::post('login/{role}', [AuthController::class, 'login']);
 Route::post('reset-password', [AuthController::class, 'resetPassword'])->middleware('auth:sanctum');
 Route::post('forgot-password', [AuthController::class, 'forgotPassword']);
 
 Route::get('users', function () {
-    return json_decode(User::with('roles')->get());
+    return response()->json(UserResource::collection(User::with('roles')->where('id', 71)->get()));
 });
 Route::middleware(['auth:sanctum'])->prefix('supplier')->group(function () {
 

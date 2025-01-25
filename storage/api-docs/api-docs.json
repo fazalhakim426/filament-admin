@@ -15,13 +15,14 @@
         }
     ],
     "paths": {
-        "/register": {
+        "/register-customer": {
             "post": {
                 "tags": [
-                    "Authentication"
+                    "Customer"
                 ],
-                "summary": "Register a new user",
-                "operationId": "5d4fa5d5607ed675ba93907e1fc94534",
+                "summary": "Register a new customer",
+                "description": "Register a new customer and assign the 'Customer' role.",
+                "operationId": "048e3accabe29a39f51e4a8dbe070ae1",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -35,20 +36,44 @@
                                 ],
                                 "properties": {
                                     "name": {
+                                        "description": "Customer's full name",
                                         "type": "string",
-                                        "example": "John Doe"
+                                        "example": "John Yar"
                                     },
                                     "email": {
+                                        "description": "Customer's email address",
                                         "type": "string",
                                         "format": "email",
-                                        "example": "john.doe@example.com"
+                                        "example": "customer33@manzil.comd"
+                                    },
+                                    "city_id": {
+                                        "description": "City ID (optional, must exist in cities table)",
+                                        "type": "string",
+                                        "example": "1"
+                                    },
+                                    "contact_number": {
+                                        "description": "Customer's contact number (optional)",
+                                        "type": "string",
+                                        "example": "+123456789"
+                                    },
+                                    "whatsapp_number": {
+                                        "description": "Customer's WhatsApp number (optional)",
+                                        "type": "string",
+                                        "example": "+987654321"
+                                    },
+                                    "address": {
+                                        "description": "Customer's address (optional)",
+                                        "type": "string",
+                                        "example": "123 Customer Street"
                                     },
                                     "password": {
+                                        "description": "Password (minimum 8 characters)",
                                         "type": "string",
                                         "format": "password",
                                         "example": "password123"
                                     },
                                     "password_confirmation": {
+                                        "description": "Password confirmation",
                                         "type": "string",
                                         "format": "password",
                                         "example": "password123"
@@ -60,12 +85,399 @@
                     }
                 },
                 "responses": {
+                    "201": {
+                        "description": "Customer successfully registered",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Customer successfully registered"
+                                        },
+                                        "user": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 75
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "John Yar"
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                    "format": "email",
+                                                    "example": "customer33@manzil.comd"
+                                                },
+                                                "email_verified_at": {
+                                                    "type": "string",
+                                                    "format": "nullable",
+                                                    "example": null
+                                                },
+                                                "roles": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "Customer"
+                                                    }
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "example": "0 seconds ago"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "example": "0 seconds ago"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
                     "422": {
                         "description": "Validation errors",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "type": "object",
+                                            "additionalProperties": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string",
+                                                    "example": "The name field is required."
+                                                },
+                                                "property": null
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/register-supplier": {
+            "post": {
+                "tags": [
+                    "Supplier"
+                ],
+                "summary": "Register a new supplier",
+                "description": "This endpoint registers a new supplier with both user and supplier-specific details.",
+                "operationId": "64cd90cb9f158414f5ef3cdddb66d3e3",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "description": "User's full name",
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "email": {
+                                        "description": "User's email address",
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john.doe@example.com"
+                                    },
+                                    "city_id": {
+                                        "description": "City ID associated with the user",
+                                        "type": "string",
+                                        "example": "1",
+                                        "nullable": true
+                                    },
+                                    "contact_number": {
+                                        "description": "Contact number of the user",
+                                        "type": "string",
+                                        "example": "123456789",
+                                        "nullable": true
+                                    },
+                                    "whatsapp_number": {
+                                        "description": "WhatsApp number of the user",
+                                        "type": "string",
+                                        "example": "987654321",
+                                        "nullable": true
+                                    },
+                                    "address": {
+                                        "description": "Address of the user",
+                                        "type": "string",
+                                        "example": "123 Main Street",
+                                        "nullable": true
+                                    },
+                                    "password": {
+                                        "description": "User's password (min: 8 characters)",
+                                        "type": "string",
+                                        "example": "securepassword123"
+                                    },
+                                    "password_confirmation": {
+                                        "description": "Confirmation of the password",
+                                        "type": "string",
+                                        "example": "securepassword123"
+                                    },
+                                    "business_name": {
+                                        "description": "Supplier's business name",
+                                        "type": "string",
+                                        "example": "John Supplies"
+                                    },
+                                    "contact_person": {
+                                        "description": "Contact person for the supplier",
+                                        "type": "string",
+                                        "example": "John Contact",
+                                        "nullable": true
+                                    },
+                                    "website": {
+                                        "description": "Supplier's website",
+                                        "type": "string",
+                                        "format": "url",
+                                        "example": "https://johnsupplies.com",
+                                        "nullable": true
+                                    },
+                                    "supplier_type": {
+                                        "description": "Type of supplier",
+                                        "type": "string",
+                                        "example": "Retail",
+                                        "nullable": true
+                                    },
+                                    "main_category_id": {
+                                        "description": "ID of the main product category",
+                                        "type": "integer",
+                                        "example": 5,
+                                        "nullable": true
+                                    },
+                                    "secondary_category_id": {
+                                        "description": "ID of the secondary product category",
+                                        "type": "integer",
+                                        "example": 10,
+                                        "nullable": true
+                                    },
+                                    "product_available": {
+                                        "description": "Quantity of products available",
+                                        "type": "integer",
+                                        "example": 100,
+                                        "nullable": true
+                                    },
+                                    "product_source": {
+                                        "description": "Source of the products",
+                                        "type": "string",
+                                        "example": "Local",
+                                        "nullable": true
+                                    },
+                                    "product_unit_quality": {
+                                        "description": "Quality of the product units",
+                                        "type": "string",
+                                        "example": "High",
+                                        "nullable": true
+                                    },
+                                    "self_listing": {
+                                        "description": "Indicates if the supplier lists products themselves",
+                                        "type": "boolean",
+                                        "example": false,
+                                        "nullable": true
+                                    },
+                                    "product_range": {
+                                        "description": "Range of products offered",
+                                        "type": "string",
+                                        "example": "Wide",
+                                        "nullable": true
+                                    },
+                                    "using_daraz": {
+                                        "description": "Indicates if the supplier uses Daraz for selling",
+                                        "type": "boolean",
+                                        "example": false,
+                                        "nullable": true
+                                    },
+                                    "daraz_url": {
+                                        "description": "Daraz profile URL",
+                                        "type": "string",
+                                        "format": "url",
+                                        "example": "https://daraz.pk/johnsupplies",
+                                        "nullable": true
+                                    },
+                                    "ecommerce_experience": {
+                                        "description": "Supplier's e-commerce experience",
+                                        "type": "string",
+                                        "example": "5 years",
+                                        "nullable": true
+                                    },
+                                    "term_agreed": {
+                                        "description": "Indicates if the supplier has agreed to terms",
+                                        "type": "boolean",
+                                        "example": true,
+                                        "nullable": true
+                                    },
+                                    "marketing_type": {
+                                        "description": "Type of marketing used by the supplier",
+                                        "type": "string",
+                                        "example": "Online",
+                                        "nullable": true
+                                    },
+                                    "preferred_contact_time": {
+                                        "description": "Preferred time for contact",
+                                        "type": "string",
+                                        "format": "datetime",
+                                        "example": "2025-01-25 10:00:00",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Supplier successfully registered",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Supplier successfully registered"
+                                        },
+                                        "user": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 74
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "John Doe"
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                    "example": "fff@rrrrr.ffddje"
+                                                },
+                                                "email_verified_at": {
+                                                    "type": "string",
+                                                    "example": null,
+                                                    "nullable": true
+                                                },
+                                                "roles": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    },
+                                                    "example": [
+                                                        "Supplier"
+                                                    ]
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "example": "0 seconds ago"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "example": "0 seconds ago"
+                                                },
+                                                "supplier_detail": {
+                                                    "properties": {
+                                                        "business_name": {
+                                                            "type": "string",
+                                                            "example": "John Supplies"
+                                                        },
+                                                        "contact_person": {
+                                                            "type": "string",
+                                                            "example": "John Contact"
+                                                        },
+                                                        "website": {
+                                                            "type": "string",
+                                                            "example": "https://johnsupplies.com"
+                                                        },
+                                                        "supplier_type": {
+                                                            "type": "string",
+                                                            "example": "Retail"
+                                                        },
+                                                        "main_category_id": {
+                                                            "type": "integer",
+                                                            "example": 5
+                                                        },
+                                                        "secondary_category_id": {
+                                                            "type": "integer",
+                                                            "example": 10
+                                                        },
+                                                        "product_available": {
+                                                            "type": "integer",
+                                                            "example": 100
+                                                        },
+                                                        "product_source": {
+                                                            "type": "string",
+                                                            "example": "Local"
+                                                        },
+                                                        "product_unit_quality": {
+                                                            "type": "string",
+                                                            "example": "High"
+                                                        },
+                                                        "self_listing": {
+                                                            "type": "boolean",
+                                                            "example": false
+                                                        },
+                                                        "product_range": {
+                                                            "type": "string",
+                                                            "example": "Wide"
+                                                        },
+                                                        "using_daraz": {
+                                                            "type": "boolean",
+                                                            "example": false
+                                                        },
+                                                        "daraz_url": {
+                                                            "type": "string",
+                                                            "example": "https://daraz.pk/johnsupplies"
+                                                        },
+                                                        "ecommerce_experience": {
+                                                            "type": "string",
+                                                            "example": "5 years"
+                                                        },
+                                                        "term_agreed": {
+                                                            "type": "boolean",
+                                                            "example": true
+                                                        },
+                                                        "marketing_type": {
+                                                            "type": "string",
+                                                            "example": "Online"
+                                                        },
+                                                        "preferred_contact_time": {
+                                                            "type": "string",
+                                                            "format": "datetime",
+                                                            "example": "2025-01-25 10:00:00"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
                                         "errors": {
                                             "type": "object"
                                         }
@@ -346,6 +758,14 @@
         }
     },
     "tags": [
+        {
+            "name": "Customer",
+            "description": "Customer"
+        },
+        {
+            "name": "Supplier",
+            "description": "Supplier"
+        },
         {
             "name": "Authentication",
             "description": "Authentication"

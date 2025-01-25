@@ -60,6 +60,10 @@ class OrderResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Order Date')
+                    ->date()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('warehouse_number'),
                 Tables\Columns\TextColumn::make('customerUser.name')
                     ->numeric()
@@ -69,11 +73,8 @@ class OrderResource extends Resource
                     ->prefix("RS ")
                     ->sortable(),
                 Tables\Columns\TextColumn::make('status')
-                    ->badge(),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->badge()
+                    ->color(fn($record) => $record->status === 'pending' ? 'gray' : ($record->status === 'confirmed' ? 'primary' : ($record->status === 'shipped' ? 'success' : ($record->status === 'delivered' ? 'success' : ($record->status === 'canceled' ? 'danger' : 'gray'))))),
                 Tables\Columns\TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()

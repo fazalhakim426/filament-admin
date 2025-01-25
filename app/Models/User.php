@@ -10,9 +10,10 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Support\Facades\Hash;
+
 class User extends Authenticatable
 {
-    use HasRoles,HasApiTokens;
+    use HasRoles, HasApiTokens;
     use HasFactory, Notifiable;
     protected $guard_name = ['web', 'api'];
 
@@ -55,20 +56,22 @@ class User extends Authenticatable
     {
         return $this->hasMany(Product::class, 'supplier_user_id', 'id');
     }
-
-    function supplier_orders(): HasMany
+ 
+    function supplierDetail()
     {
-        return $this->hasMany(Order::class, 'supplier_user_id', 'id');
+        return $this->hasOne(SupplierDetail::class, 'user_id','id');
     }
-    function orders(): HasMany
+
+    function orders()
     {
         return $this->belongsToMany(Order::class);
     }
-    
-    function city(){
+
+    function city()
+    {
         return $this->belongsTo(City::class);
     }
-    
+
     protected static function boot()
     {
         parent::boot();
@@ -77,5 +80,4 @@ class User extends Authenticatable
             // $user->password = Hash::make('password');
         });
     }
-
 }
