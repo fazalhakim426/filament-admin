@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\CityResource\Pages;
 use App\Filament\Resources\CityResource\RelationManagers;
 use App\Models\City;
+use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -18,8 +19,9 @@ class CityResource extends Resource
     protected static ?string $model = City::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
-    protected static ?string $navigationGroup = 'Settings';
-    
+    protected static ?string $navigationGroup = 'Settings'; 
+    protected static ?string $recordTitleAttribute = 'name';
+
     public static function form(Form $form): Form
     {
         return $form
@@ -29,16 +31,18 @@ class CityResource extends Resource
                     ->maxLength(255),
             ]);
     }
-
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->searchable(),
+                Tables\Columns\TextColumn::make('description')
+                    ->default('no descriptin')
+                    ->searchable()
             ])
             ->filters([
-                //
+                // Additional filters if necessary
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
@@ -50,6 +54,7 @@ class CityResource extends Resource
                 ]),
             ]);
     }
+
 
     public static function getPages(): array
     {

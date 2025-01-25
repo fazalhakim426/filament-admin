@@ -23,6 +23,7 @@ class ProductResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-archive-box';
     // protected static ?int $navigationSort = 2;
     protected static ?string $navigationGroup = 'Products & Orders';
+    protected static ?string $recordTitleAttribute = 'name';
     
    
 

@@ -20,11 +20,19 @@ class OrderResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-shopping-bag';
     protected static ?string $navigationGroup = 'Products & Orders';
-    protected static ?string $recordTitleAttribute = 'number';
-    
+    protected static ?string $recordTitleAttribute = 'warehouse_number';
+
     public static function canCreate(): bool
     {
-        return false;  
+        return false;
+    }
+    public static function globalSearchColumns(): array
+    {
+        return [
+            'id',
+            'warehouse_number',
+            'total_price'
+        ];
     }
     public static function getNavigationBadge(): ?string
     {
@@ -61,7 +69,7 @@ class OrderResource extends Resource
                     ->prefix("RS ")
                     ->sortable(),
                 Tables\Columns\TextColumn::make('status')
-                ->badge(),
+                    ->badge(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -75,10 +83,8 @@ class OrderResource extends Resource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->filters([ 
-            ])
-            ->actions([ 
-            ])
+            ->filters([])
+            ->actions([])
             ->bulkActions([
                 // Tables\Actions\BulkActionGroup::make([
                 //     Tables\Actions\DeleteBulkAction::make(),

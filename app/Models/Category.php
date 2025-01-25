@@ -12,6 +12,7 @@ class Category extends Model
     use HasFactory,SoftDeletes;
     public $timestamps    = false;
     protected $fillable = ['name','description'];
+    
     function products() {
         return $this->hasMany(Product::class);
     }

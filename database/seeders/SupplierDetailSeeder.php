@@ -43,8 +43,7 @@ class SupplierDetailSeeder extends Seeder
                 // Create orders for the customer
                 Order::factory(3)->create([
                     'customer_user_id' => $user->id,
-                    'total_price' => $totalPrice,
-                    'status' => 'shipped',
+                    'total_price' => $totalPrice
                 ])->each(function ($order) use ($user, $supplierDetail, $totalPrice) {
                     $quantity = mt_rand(1, 4);
                     $unit_selling_price = number_format($totalPrice / $quantity, 2);

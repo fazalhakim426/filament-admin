@@ -74,7 +74,7 @@ class User extends Authenticatable
         parent::boot();
 
         static::creating(function ($user) {
-            $user->password = Hash::make('password');
+            // $user->password = Hash::make('password');
         });
     }
 

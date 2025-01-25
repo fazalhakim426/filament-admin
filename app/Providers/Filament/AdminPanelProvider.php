@@ -3,11 +3,16 @@
 namespace App\Providers\Filament;
 
 use Althinect\FilamentSpatieRolesPermissions\FilamentSpatieRolesPermissionsPlugin;
+use App\Filament\Resources\CategoryResource;
+use App\Filament\Resources\CityResource;
+use App\Filament\Resources\NotificationResource;
 use App\Filament\Resources\OrderResource\Widgets\LatestOrders;
+use App\Models\Category;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationGroup;
 use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -70,5 +75,37 @@ class AdminPanelProvider extends PanelProvider
                 ->group('Api Documentation')
                 ->sort(10)
             ]);
+    }
+
+
+    public static function navigation(): array
+    {
+        return [
+            NavigationGroup::make('Settings')
+                ->icon('heroicon-o-light-bulb')
+                ->items([
+                 CategoryResource::class, 
+                 CityResource::class, 
+                 NotificationResource::class, 
+                ])
+                ->sort(4),
+
+            NavigationGroup::make('Group 2')
+                ->icon('heroicon-o-collection')
+                ->items([
+                    // Your resources for Group 2
+                    App\Filament\Resources\ReferralResource::class,
+                    App\Filament\Resources\DepositResource::class,
+                ])
+                ->sort(2),
+
+            NavigationGroup::make('Group 3')
+                ->icon('heroicon-o-archive')
+                ->items([
+                    // Your resources for Group 3
+                    \Filament\Resources\ReportResource::class,
+                ])
+                ->sort(3),
+        ];
     }
 }

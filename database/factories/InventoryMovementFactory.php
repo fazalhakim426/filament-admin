@@ -16,7 +16,8 @@ class InventoryMovementFactory extends Factory
             'product_id' => Product::factory(),
             'type' => $this->faker->randomElement(['addition', 'deduction']),
             'quantity' => $this->faker->numberBetween(1, 100),
-            'unit_cost_price' => $this->faker->randomFloat(2, 10, 100)
+            'unit_cost_price' => $this->faker->randomFloat(2, 10, 100),
+            'description'=> $this->faker->sentence(),
         ];
     }
 }

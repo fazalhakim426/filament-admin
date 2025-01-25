@@ -19,6 +19,7 @@ class ReferralResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-link';
     protected static ?string $navigationGroup = 'Financial';
+    protected static ?int $sort = 3;
 
     public static function canCreate(): bool
     {

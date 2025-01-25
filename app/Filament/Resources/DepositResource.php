@@ -20,6 +20,7 @@ class DepositResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-currency-dollar';
     protected static ?string $navigationGroup = 'Financial';
+    protected static ?string $recordTitleAttribute = 'transaction_reference';
 
     public static function form(Form $form): Form
     {
@@ -66,8 +67,10 @@ class DepositResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->columns([
-                
+            ->columns([ 
+                // Transaction reference
+                Tables\Columns\TextColumn::make('transaction_reference')
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('user.email')
                     ->label('Email')
                     ->searchable(),

@@ -18,7 +18,7 @@ class NotificationResource extends Resource
     protected static ?string $model = Notification::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-light-bulb';
-    protected static ?string $navigationGroup = 'Settings';
+    protected static ?string $navigationGroup = 'Settings'; 
 
     public static function canCreate(): bool
     {

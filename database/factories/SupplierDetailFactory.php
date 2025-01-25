@@ -26,7 +26,7 @@ class SupplierDetailFactory extends Factory
     {
         // ['role_id' => Role::where('name', 'supplier')->first()->id]
         return [
-            'user_id' => User::factory([['email' => 'supplier@manzil.com']]),
+            'user_id' => User::factory(),
             'business_name' => $this->faker->company(),
             'contact_person' => $this->faker->name(),
             'website' => $this->faker->url(),

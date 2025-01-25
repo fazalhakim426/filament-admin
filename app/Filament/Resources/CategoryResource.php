@@ -17,8 +17,10 @@ class CategoryResource extends Resource
 {
     protected static ?string $model = Category::class;
     protected static ?string $navigationGroup = 'Settings';
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
-    
+    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack'; 
+    protected static ?string $recordTitleAttribute = 'name';
+
+    // protected static ?int $sort = 8;
 
     public static function form(Form $form): Form
     {
@@ -37,18 +39,30 @@ class CategoryResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
-                ->searchable(),
-            Tables\Columns\TextColumn::make('description')
-                ->searchable(),
-            Tables\Columns\TextColumn::make('created_at')
-                ->dateTime()
-                ->sortable()
-                ->toggleable(isToggledHiddenByDefault: true),
-            Tables\Columns\TextColumn::make('updated_at')
-                ->dateTime()
-                ->sortable()
-                ->toggleable(isToggledHiddenByDefault: true),
-       
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('description')
+                    ->default('no descriptin')
+                    ->searchable(),
+                    
+                Tables\Columns\TextColumn::make('products_count')  // Display the count of products
+                ->label('Products Count')  // Set the label for the column
+                ->badge(function ($state, $record) {
+                    // Count the number of products for the current category
+                    return $record->products()->count() . ' Products';
+                })
+                ->searchable(),  // Make this column searchable if needed
+
+                Tables\Columns\TextColumn::make('description')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('created_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
             ])
             ->filters([
                 //
