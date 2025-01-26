@@ -33,25 +33,21 @@ class CategoryResource extends Resource
                     ->columnSpanFull(),
             ]);
     }
+    protected function getTableQuery(): Builder
+    {
+        return parent::getTableQuery()->latest(); // Orders by the `created_at` column by default
+    }
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
-                    ->searchable(),
+                    ->searchable()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('description')
                     ->default('no descriptin')
-                    ->searchable(),
-                    
-                Tables\Columns\TextColumn::make('products_count')  // Display the count of products
-                ->label('Products Count')  // Set the label for the column
-                ->badge(function ($state, $record) {
-                    // Count the number of products for the current category
-                    return $record->products()->count() . ' Products';
-                })
-                ->searchable(),  // Make this column searchable if needed
-
+                    ->searchable(), 
                 Tables\Columns\TextColumn::make('description')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('created_at')

@@ -31,15 +31,17 @@ class CityResource extends Resource
                     ->maxLength(255),
             ]);
     }
+    protected function getTableQuery(): Builder
+    {
+        return parent::getTableQuery()->latest(); // Orders by the `created_at` column by default
+    }
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('description')
-                    ->default('no descriptin')
                     ->searchable()
+                    ->sortable()
             ])
             ->filters([
                 // Additional filters if necessary

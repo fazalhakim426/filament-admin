@@ -73,13 +73,16 @@ class InventoryMovementResource extends Resource
                         'addition' => 'Addition',
                         'deduction' => 'Deduction',
                     ])
-                    ->default('addition'),
-
+                    ->default('addition'), 
                 // Quantity
                 TextInput::make('quantity')
                     ->label('Quantity')
                     ->required()
                     ->numeric(),
+                // Quantity
+                TextInput::make('description')
+                    ->label('Description')
+                    ->required(),
 
                 // Unit Cost Price
                 TextInput::make('unit_cost_price')
@@ -104,8 +107,8 @@ class InventoryMovementResource extends Resource
                     ->sortable(),
                 TextColumn::make('type')
                     ->badge()
-                    ->color(fn ($record) => $record->type === 'deduction' ? 'danger' : 'primary') // Conditional badge color
-              
+                    ->color(fn($record) => $record->type === 'deduction' ? 'danger' : 'primary') // Conditional badge color
+
                     ->sortable(),
                 TextColumn::make('unit_cost_price')
                     ->label('Unit Cost')

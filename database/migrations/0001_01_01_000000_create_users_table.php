@@ -12,6 +12,8 @@ return new class extends Migration
         Schema::create('cities', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->timestamps();
+
             $table->softDeletes();
         });
 
@@ -39,6 +41,7 @@ return new class extends Migration
             $table->string('password');
             $table->timestamp('email_verified_at')->nullable();
             $table->boolean('active')->default(true);
+            $table->boolean('new_supplier_request')->default(true);
             $table->foreignId('current_team_id')->nullable();
             $table->string('profile_photo_path', 2048)->nullable();
             $table->foreignId('city_id')->nullable()->constrained('cities');
@@ -87,7 +90,7 @@ return new class extends Migration
             $table->string('name');
             $table->text('description')->nullable();
             $table->decimal('referral_reward_value', 10, 2)->nullable()->default(0);
-            $table->enum('referral_reward_type', ['fixed','percentage'])->default('fixed');
+            $table->enum('referral_reward_type', ['fixed', 'percentage'])->default('fixed');
             $table->integer('stock_quantity')->default(0);
             $table->decimal('unit_selling_price', 10, 2); //current selling price
             $table->string('sku')->nullable();
@@ -113,7 +116,7 @@ return new class extends Migration
             $table->string('warehouse_number');
             $table->foreignId('customer_user_id')->constrained('users')->onDelete('cascade');
             $table->decimal('total_price', 10, 2);
-            $table->enum('status', ['pending', 'confirmed' ,'paid','refund','shipped', 'delivered', 'canceled'])->default('pending');
+            $table->enum('status', ['pending', 'confirmed', 'paid', 'refund', 'shipped', 'delivered', 'canceled'])->default('pending');
             //order status handle by admin. admin will handle the order because the order belong to many suppliers through thier products.
             $table->timestamps();
             $table->softDeletes();
@@ -121,16 +124,18 @@ return new class extends Migration
         });
         Schema::create('order_items', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('order_id')->constrained('orders');
-            $table->foreignId('product_id')->constrained('products');
+            $table->foreignId('order_id')->constrained('orders');// 1
+            $table->foreignId('product_id')->constrained('products');//a,b 
             $table->foreignId('supplier_user_id')->constrained('users'); //for searching purpose the get saled items directly not through products and order.for future use.
-            $table->integer('quantity');
+            $table->integer('quantity');//1
             $table->decimal('profit', 10, 2); // ( unit_selling_price  - unit_cost_price ) * quantity
-            $table->decimal('price', 10, 2); //quantity * unit selling price 
-            $table->decimal('unit_cost_price', 10, 2);
-            $table->enum('status', ['pending', 'confirmed','canceled'])->default('pending');
+            $table->decimal('price', 10, 2); //quantity * unit selling price 200
+            $table->decimal('unit_cost_price', 10, 2); // 90 
+            $table->enum('status', ['pending', 'confirmed', 'canceled'])->default('pending');
             //item status handle by supplier as the item belong to supplier.
-            $table->decimal('unit_selling_price', 10, 2); 
+            $table->decimal('unit_selling_price', 10, 2);//100
+
+
             //To dedect profit made by suppliers.supplier cant updte this value need to create another product if selling value is different
         });
 
@@ -141,7 +146,7 @@ return new class extends Migration
             $table->foreignId('reseller_user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('order_item_id')->constrained('order_items')->onDelete('cascade');
             $table->boolean('reward_released')->default(false);
-            $table->decimal('reward_amount', 10, 2)->default(0.00);
+            $table->decimal('reward_amount', 10, 2)->default(0.00);// 100
             $table->string('referral_code')->nullable();
             $table->softDeletes();
             $table->timestamps();

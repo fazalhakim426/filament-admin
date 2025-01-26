@@ -40,7 +40,7 @@ class UserResource extends Resource
     {
         return $form
             ->schema([
-              
+
                 Forms\Components\TextInput::make('name')
                     ->required()
                     ->maxLength(50),
@@ -48,8 +48,8 @@ class UserResource extends Resource
                     ->label('Email'),
 
                 FileUpload::make('profile_photo_path')
-                ->directory('images') // Stored in storage/app/public/images
-                ->disk('public')      // Use the public disk
+                    ->directory('images') // Stored in storage/app/public/images
+                    ->disk('public')      // Use the public disk
                 ->visibility('public')
                 ,
                 Forms\Components\Textarea::make('address')
@@ -66,9 +66,9 @@ class UserResource extends Resource
                     ->relationship(name: 'city', titleAttribute: 'name'),
                 Forms\Components\Toggle::make('active')
                     ->required(),
-                    Forms\Components\Select::make('roles')
+                Forms\Components\Select::make('roles')
                     ->relationship(name: 'roles', titleAttribute: 'name')
-                    ->saveRelationshipsUsing(function (Model $record, $state) { 
+                    ->saveRelationshipsUsing(function (Model $record, $state) {
                         $record->roles()->sync($state);
                     })
                     ->multiple()
@@ -81,7 +81,7 @@ class UserResource extends Resource
     {
         return $table
             ->columns([
-                
+
                 ImageColumn::make('profile_photo_path')->label('Photo')->default('https://ui-avatars.com/api/?name=X&color=FFFFFF&background=020617'),
                 TextColumn::make('name')->label('Name')->sortable()->searchable(),
                 TextColumn::make('email')->label('Email')->sortable()->searchable(),
@@ -111,11 +111,11 @@ class UserResource extends Resource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('roles')
-                ->badge()
-                ->formatStateUsing(fn ($state) => is_array($state) ? implode(', ', $state) : $state) // Combine roles as a comma-separated string
-                ->color('primary') // Optional: Set a default color for badges
-                ->extraAttributes(['class' => 'space-x-1']) // Adds spacing between badges
-             
+                    ->badge()
+                    ->formatStateUsing(fn($state) => is_array($state) ? implode(', ', $state) : $state) // Combine roles as a comma-separated string
+                    ->color('primary') // Optional: Set a default color for badges
+                    ->extraAttributes(['class' => 'space-x-1']) // Adds spacing between badges
+
                     ->getStateUsing(fn(User $record) => $record->roles->pluck('name')->join(', ')), // Fetch roles and join them as a string
 
             ])
