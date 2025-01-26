@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources;
 
-use App\Http\Resources\SupplierDetailResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -15,20 +14,29 @@ class UserResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        
+            $data = [
+                'id' => $this->id,
+                "name" => $this->name,
+                "email" => $this->email,
+                "email_verified_at" => $this->email_verified_at,
+                "active" => $this->active?true:false, 
+                "profile_photo_path" => $this->profile_photo_path,
+                "address" => $this->address,
+                "roles" => $this->roles->pluck('name'),
+                "contact_number" => $this->contact_number,
+                "whatsapp_number" => $this->whatsapp_number,
+                "referral_code" => $this->referral_code,
+                "balance" => $this->balance, 
+                "city" => new CityResource($this->city), 
+                'created_at' => $this->created_at->diffForHumans(),
+                'updated_at' => $this->updated_at->diffForHumans()
+            ];
 
-        $data = [
-            'id' => $this->id,
-            'name' => $this->name,
-            'email' => $this->email,
-            'email_verified_at' => $this->email_verified_at,
-            'roles' => $this->roles->pluck('name'), // Assumes a relationship like $user->roles
-            'created_at' => $this->created_at->diffForHumans(),
-            'updated_at' => $this->updated_at->diffForHumans(),
-        ];
-        if (in_array('Supplier', $this->roles->pluck('name')->toArray())) {
-            $data['supplier_detail'] = new SupplierDetailResource($this->supplierDetail);
-        }
-
-        return $data;
+            if (in_array('Supplier', $this->roles->pluck('name')->toArray())) {
+                $data['supplier_detail'] = new SupplierDetailResource($this->supplierDetail);
+            }
+            return $data;
+         
     }
 }

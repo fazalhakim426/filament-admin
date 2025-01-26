@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 class Order extends Model
 {
     use HasFactory;
-    //product using pivot order_items
     function products()
     {
         return $this->belongsToMany(Product::class, 'order_items', 'order_id', 'product_id')->withPivot('amount');
@@ -25,16 +24,13 @@ class Order extends Model
     {
         return $this->belongsTo(User::class, 'customer_user_id');
     }
-    //order items
     function items()
     {
-        return $this->hasMany(OrderItem::class);
+        return $this->hasMany(OrderItem::class, 'order_id');
     }
-
     protected static function boot()
     {
         parent::boot();
-
         static::creating(function ($order) {
             $order->warehouse_number = self::generateWarehouseNumber();
         });

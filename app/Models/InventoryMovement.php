@@ -13,22 +13,24 @@ class InventoryMovement extends Model
     function product()
     {
         return $this->belongsTo(Product::class);
-    } 
+    }
     function supplierUser()
     {
-        return $this->belongsTo(User::class,'supplier_user_id');
+        return $this->belongsTo(User::class, 'supplier_user_id');
     }
     protected static function booted()
     {
         static::creating(function ($inventoryMovement) {
             $product = $inventoryMovement->product;
-            if ($product) {
-                //log
+            if ($product) { 
                 if ($inventoryMovement->type == 'addition') {
                     $product->update(['stock_quantity' => ($product->stock_quantity + $inventoryMovement->quantity)]);
                 } elseif ($inventoryMovement->type == 'deduction') {
-
-                    $product->update(['stock_quantity' => ($product->stock_quantity - $inventoryMovement->quantity)]);
+                    if ($product->stock_quantity < $inventoryMovement->quantity) {
+                        return new \Exception('Not enough stock.');
+                    } else {
+                        $product->update(['stock_quantity' => ($product->stock_quantity - $inventoryMovement->quantity)]);
+                    }
                 }
             } else {
                 throw new \Exception('Product not found for Inventory Movement.');
@@ -39,8 +41,8 @@ class InventoryMovement extends Model
         static::deleting(function ($inventoryMovement) {
             $product = $inventoryMovement->product;
             if ($product) {
-              
-                if ($inventoryMovement->type == 'addition') {  
+
+                if ($inventoryMovement->type == 'addition') {
                     if ($product->stock_quantity < $inventoryMovement->quantity) {
                         throw new \Exception('Not enough stock.');
                     }
@@ -77,6 +79,4 @@ class InventoryMovement extends Model
             }
         });
     }
-
-  
 }

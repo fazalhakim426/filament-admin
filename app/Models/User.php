@@ -66,6 +66,16 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Order::class);
     }
+    function supplierOrderItems()
+    {
+        return $this->hasMany(OrderItem::class,'supplier_user_id','id');
+    }
+    //supplier order
+    public function ordersAsSupplier()
+    {
+        return $this->hasManyThrough(Order::class, OrderItem::class, 'supplier_user_id', 'id', 'id', 'order_id')
+                    ->distinct(); // Using distinct to ensure unique orders are returned
+    } 
 
     function city()
     {
@@ -77,7 +87,7 @@ class User extends Authenticatable
         parent::boot();
 
         static::creating(function ($user) {
-            // $user->password = Hash::make('password');
+            $user->password = Hash::make('password');
         });
     }
 }

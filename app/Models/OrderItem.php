@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 class OrderItem extends Model
 {
     
+    //timestamp false
+    public $timestamps  = false;
     protected $fillable = [
         'order_id', 'product_id', 'quantity', 'price', 'discount', 'total'
     ];

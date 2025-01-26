@@ -19,6 +19,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->text('description')->nullable();
+            $table->timestamps();
             $table->softDeletes();
         });
         // Roles Table
@@ -85,8 +86,8 @@ return new class extends Migration
             $table->foreignId('category_id')->constrained('categories');
             $table->string('name');
             $table->text('description')->nullable();
-            $table->decimal('referral_reward_amount', 10, 2)->nullable();
-            $table->decimal('referral_reward_percentage', 10, 2)->nullable();
+            $table->decimal('referral_reward_value', 10, 2)->nullable()->default(0);
+            $table->enum('referral_reward_type', ['fixed','percentage'])->default('fixed');
             $table->integer('stock_quantity')->default(0);
             $table->decimal('unit_selling_price', 10, 2); //current selling price
             $table->string('sku')->nullable();
@@ -112,7 +113,8 @@ return new class extends Migration
             $table->string('warehouse_number');
             $table->foreignId('customer_user_id')->constrained('users')->onDelete('cascade');
             $table->decimal('total_price', 10, 2);
-            $table->enum('status', ['pending', 'confirmed', 'shipped', 'delivered', 'canceled'])->default('pending');
+            $table->enum('status', ['pending', 'confirmed' ,'paid','refund','shipped', 'delivered', 'canceled'])->default('pending');
+            //order status handle by admin. admin will handle the order because the order belong to many suppliers through thier products.
             $table->timestamps();
             $table->softDeletes();
             $table->index(['id']);
@@ -126,7 +128,10 @@ return new class extends Migration
             $table->decimal('profit', 10, 2); // ( unit_selling_price  - unit_cost_price ) * quantity
             $table->decimal('price', 10, 2); //quantity * unit selling price 
             $table->decimal('unit_cost_price', 10, 2);
-            $table->decimal('unit_selling_price', 10, 2); //To dedect profit made by suppliers.supplier cant updte this value need to create another product if selling value is different
+            $table->enum('status', ['pending', 'confirmed','canceled'])->default('pending');
+            //item status handle by supplier as the item belong to supplier.
+            $table->decimal('unit_selling_price', 10, 2); 
+            //To dedect profit made by suppliers.supplier cant updte this value need to create another product if selling value is different
         });
 
         // Referrals table

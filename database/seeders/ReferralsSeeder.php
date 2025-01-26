@@ -22,7 +22,7 @@ class ReferralsSeeder extends Seeder
                 $product = $item->product;
                 $supplier = $product->supplierUser;
                 // Calculate reward based on product referral percentage and item price.
-                $rewardAmount = ($product->referral_reward_percentage / 100) * $item->price * $item->quantity;
+                $rewardAmount = ($product->referral_reward_type == 'fixed') ? $product->referral_reward_value : ($product->referral_reward_value / 100) *( $item->price * $item->quantity);
 
                 $role = Role::where('name', 'reseller')->first();
                 $resellerUser = User::inRandomOrder()->first();

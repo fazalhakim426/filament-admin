@@ -755,6 +755,840 @@
                     }
                 }
             }
+        },
+        "/products": {
+            "get": {
+                "tags": [
+                    "Supplier Products"
+                ],
+                "summary": "Get a list of products for the authenticated supplier",
+                "description": "Retrieve a list of products for the authenticated supplier with optional filters.",
+                "operationId": "b3a184055d31edffb42805e81c64a478",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search term to filter by product name.",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "in": "query",
+                        "description": "Filter by product name.",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sku",
+                        "in": "query",
+                        "description": "Filter by product SKU.",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "description",
+                        "in": "query",
+                        "description": "Filter by product description.",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "stock_quantity",
+                        "in": "query",
+                        "description": "Filter by product stock quantity.",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "unit_selling_price",
+                        "in": "query",
+                        "description": "Filter by product unit selling price.",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "category_id",
+                        "in": "query",
+                        "description": "Filter by product category ID.",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "is_active",
+                        "in": "query",
+                        "description": "Filter by product activity status (true or false).",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of products retrieved successfully.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "name": {
+                                                        "type": "string"
+                                                    },
+                                                    "sku": {
+                                                        "type": "string"
+                                                    },
+                                                    "is_active": {
+                                                        "type": "boolean"
+                                                    },
+                                                    "description": {
+                                                        "type": "string"
+                                                    },
+                                                    "stock_quantity": {
+                                                        "type": "integer"
+                                                    },
+                                                    "unit_selling_price": {
+                                                        "type": "string"
+                                                    },
+                                                    "referral_reward_type": {
+                                                        "type": "string",
+                                                        "nullable": true
+                                                    },
+                                                    "referral_reward_value": {
+                                                        "type": "string",
+                                                        "nullable": true
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string"
+                                                    },
+                                                    "category": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer"
+                                                            },
+                                                            "name": {
+                                                                "type": "string"
+                                                            },
+                                                            "description": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request due to invalid parameters."
+                    },
+                    "401": {
+                        "description": "Unauthorized, authentication required."
+                    },
+                    "500": {
+                        "description": "Internal server error."
+                    }
+                }
+            }
+        },
+        "/supplier/products/{id}": {
+            "get": {
+                "tags": [
+                    "Supplier Products"
+                ],
+                "summary": "Display a specific product by its ID",
+                "description": "Retrieve detailed information about a specific product by its ID.",
+                "operationId": "540781a5bedd21d7b07d7f9764e12cf9",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "description": "The ID of the product",
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Product retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "animi officia"
+                                                },
+                                                "sku": {
+                                                    "type": "string",
+                                                    "example": "Piuuo"
+                                                },
+                                                "is_active": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                },
+                                                "description": {
+                                                    "type": "string",
+                                                    "example": "Dolor nemo velit et voluptatem numquam voluptas."
+                                                },
+                                                "stock_quantity": {
+                                                    "type": "integer",
+                                                    "example": 104
+                                                },
+                                                "unit_selling_price": {
+                                                    "type": "string",
+                                                    "example": "283.54"
+                                                },
+                                                "referral_reward_type": {
+                                                    "type": "string",
+                                                    "example": "fixed|percentage"
+                                                },
+                                                "referral_reward_value": {
+                                                    "type": "string",
+                                                    "example": "null"
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "example": "12 hours ago"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "example": "12 hours ago"
+                                                },
+                                                "category": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "name": {
+                                                            "type": "string",
+                                                            "example": "Electronics"
+                                                        },
+                                                        "description": {
+                                                            "type": "string",
+                                                            "example": "Devices, gadgets, and accessories."
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Product not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Supplier Products"
+                ],
+                "summary": "Update a specific product by its ID",
+                "description": "Update the details of a specific product identified by its ID.",
+                "operationId": "c723ed61dbd3dc74ac711f3252bd0118",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "description": "The ID of the product",
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "category_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Updated Product Name"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Updated product description."
+                                    },
+                                    "referral_reward_value": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 10
+                                    },
+                                    "referral_reward_type": {
+                                        "type": "enum",
+                                        "format": "string",
+                                        "example": "fixed|percentage"
+                                    },
+                                    "stock_quantity": {
+                                        "type": "integer",
+                                        "example": 150
+                                    },
+                                    "unit_selling_price": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 300
+                                    },
+                                    "sku": {
+                                        "type": "string",
+                                        "example": "UpdatedSKU123"
+                                    },
+                                    "is_active": {
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Product updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "Updated Product Name"
+                                                },
+                                                "sku": {
+                                                    "type": "string",
+                                                    "example": "UpdatedSKU123"
+                                                },
+                                                "is_active": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                },
+                                                "description": {
+                                                    "type": "string",
+                                                    "example": "Updated product description."
+                                                },
+                                                "stock_quantity": {
+                                                    "type": "integer",
+                                                    "example": 150
+                                                },
+                                                "unit_selling_price": {
+                                                    "type": "string",
+                                                    "example": "300.00"
+                                                },
+                                                "referral_reward_type": {
+                                                    "type": "string",
+                                                    "example": "10.00"
+                                                },
+                                                "referral_reward_value": {
+                                                    "type": "string",
+                                                    "example": "null"
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "example": "12 hours ago"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "example": "0 seconds ago"
+                                                },
+                                                "category": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "name": {
+                                                            "type": "string",
+                                                            "example": "Electronics"
+                                                        },
+                                                        "description": {
+                                                            "type": "string",
+                                                            "example": "Devices, gadgets, and accessories."
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "You do not have permission to update this product",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "You do not have permission to update this product."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "The given data was invalid",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "category_id": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "The selected category id is invalid."
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Supplier Products"
+                ],
+                "summary": "Delete a specific product",
+                "description": "Delete a specific product by its ID.",
+                "operationId": "f282f157a6d080f2a0dba6f171f781fe",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the product to delete",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Product deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product deleted successfully."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Cannot delete this product because it is linked to other records",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Cannot delete this product because it is linked to other records."
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "sql": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "SQLSTATE[23000]: Integrity constraint violation: ..."
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "An unexpected error occurred",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "An unexpected error occurred."
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "sql": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "Error message details"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/supplier/products": {
+            "post": {
+                "tags": [
+                    "Supplier Products"
+                ],
+                "summary": "Store a newly created product",
+                "description": "Store a newly created product with the provided data.",
+                "operationId": "430e5d0a9a1a8241cde73390c0591073",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "category_id",
+                                    "name",
+                                    "stock_quantity",
+                                    "unit_selling_price"
+                                ],
+                                "properties": {
+                                    "category_id": {
+                                        "description": "The ID of the product's category",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "name": {
+                                        "description": "The name of the product",
+                                        "type": "string",
+                                        "example": "animi officia"
+                                    },
+                                    "description": {
+                                        "description": "A description of the product",
+                                        "type": "string",
+                                        "example": "Dolor nemo velit et voluptatem numquam voluptas."
+                                    },
+                                    "referral_reward_value": {
+                                        "description": "A monetary reward amount",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 10
+                                    },
+                                    "referral_reward_type": {
+                                        "description": "A percentage of the reward",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 10
+                                    },
+                                    "stock_quantity": {
+                                        "description": "The quantity of the product in stock",
+                                        "type": "integer",
+                                        "example": 100
+                                    },
+                                    "unit_selling_price": {
+                                        "description": "The selling price of the product",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 283.54
+                                    },
+                                    "sku": {
+                                        "description": "A unique SKU for the product",
+                                        "type": "string",
+                                        "example": "Piuuo"
+                                    },
+                                    "is_active": {
+                                        "description": "Flag to indicate if the product is active",
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Product created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "animi officia"
+                                                },
+                                                "sku": {
+                                                    "type": "string",
+                                                    "example": "Piuuo"
+                                                },
+                                                "is_active": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                },
+                                                "description": {
+                                                    "type": "string",
+                                                    "example": "Dolor nemo velit et voluptatem numquam voluptas."
+                                                },
+                                                "stock_quantity": {
+                                                    "type": "integer",
+                                                    "example": 100
+                                                },
+                                                "unit_selling_price": {
+                                                    "type": "string",
+                                                    "example": "283.54"
+                                                },
+                                                "referral_reward_type": {
+                                                    "type": "string",
+                                                    "example": "10.00"
+                                                },
+                                                "referral_reward_value": {
+                                                    "type": "string",
+                                                    "example": "null"
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "example": "0 seconds ago"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "example": "0 seconds ago"
+                                                },
+                                                "category": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "name": {
+                                                            "type": "string",
+                                                            "example": "Electronics"
+                                                        },
+                                                        "description": {
+                                                            "type": "string",
+                                                            "example": "Devices, gadgets, and accessories."
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "The given data was invalid",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "category_id": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "The selected category id is invalid."
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/supplier/products/{id}/deactivate": {
+            "patch": {
+                "tags": [
+                    "Supplier Products"
+                ],
+                "summary": "Deactivate a product",
+                "description": "Deactivate a specific product by its ID.",
+                "operationId": "b230b2bedae21be24614c4402f954738",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the product to deactivate",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Product deactivated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product deactivated successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Product not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
         }
     },
     "tags": [
@@ -769,6 +1603,10 @@
         {
             "name": "Authentication",
             "description": "Authentication"
+        },
+        {
+            "name": "Supplier Products",
+            "description": "Supplier Products"
         }
     ]
 }

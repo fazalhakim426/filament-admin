@@ -23,7 +23,7 @@ class ProductFactory extends Factory
     public function definition(): array
     {
         $price = $this->faker->randomFloat(2, 40, 400);
-        $percentage =$price>150;
+        $percentage = $price > 150;
         return [
             'name' => $this->faker->words(2, true), // Random product name
             'description' => $this->faker->sentence(), // Random description
@@ -32,8 +32,8 @@ class ProductFactory extends Factory
             'sku' => $this->faker->unique()->lexify('P????'), // Unique SKU
             'category_id' => Category::inRandomOrder()->first()->id, // Random category
             'is_active' => $this->faker->boolean(90), // 90% chance of being active
-            'referral_reward_amount' => !$percentage?10:null,
-            'referral_reward_percentage' => $percentage?10:null,
+            'referral_reward_value' => $percentage ? 10 : 30,
+            'referral_reward_type' => $percentage ? 'percentage' : 'fixed',
         ];
     }
 }

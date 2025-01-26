@@ -17,21 +17,36 @@ Route::post('reset-password', [AuthController::class, 'resetPassword'])->middlew
 Route::post('forgot-password', [AuthController::class, 'forgotPassword']);
 
 Route::get('users', function () {
-    return response()->json(UserResource::collection(User::with('roles')->where('id', 71)->get()));
+    return response()->json(
+        UserResource::collection(User::all())
+    );
 });
 Route::middleware(['auth:sanctum'])->prefix('supplier')->group(function () {
 
     Route::apiResource('products', \App\Http\Controllers\Api\Supplier\ProductController::class);
     Route::patch('products/{product}/deactivate', [\App\Http\Controllers\Api\Supplier\ProductController::class, 'deactivate']);
-    Route::get('products/{product}/performance', [\App\Http\Controllers\Api\Supplier\ProductController::class, 'performance']);
-    //order
-    Route::get('/order-items/{payment?}', [\App\Http\Controllers\Api\Supplier\OrderController::class, 'index']); // View all orders
-    Route::get('/order-items/paid', [\App\Http\Controllers\Api\Supplier\OrderController::class, 'paid']); // View all orders
-    //for admin
-    // Route::patch('{order}/confirm', [\App\Http\Controllers\Api\Supplier\OrderController::class, 'confirm']); // Confirm order
-    // Route::patch('{order}/reject', [\App\Http\Controllers\Api\Supplier\OrderController::class, 'reject']); // Reject order
-    // Route::patch('{order}/dispatch', [\App\Http\Controllers\Api\Supplier\OrderController::class, 'dispatch']); // Dispatch order
-    // Route::get('{order}/airway-bill', [\App\Http\Controllers\Api\Supplier\OrderController::class, 'airwayBill']); // Download airway bill
+    // Route::get('products/{product}/performance', [\App\Http\Controllers\Api\Supplier\ProductController::class, 'performance']);
+    //inventory
+    Route::apiResource('inventroy-movements', \App\Http\Controllers\Api\Supplier\InventoryMovementController::class);
+
+
+
+    Route::get('/orders', [\App\Http\Controllers\Api\Supplier\OrderController::class, 'index']); // View all orders
+    //confirm orders and thier items.
+    Route::patch('/orders/{order}/confirm', [\App\Http\Controllers\Api\Supplier\OrderController::class, 'confirmOrder']); // Confirm order
+    Route::patch('/order-items/{order_item}/confirm', [\App\Http\Controllers\Api\Supplier\OrderController::class, 'confirmOrderItem']); // Confirm order
+    //reject orders or order items.
+    Route::patch('/orders/{order}/reject', [\App\Http\Controllers\Api\Supplier\OrderController::class, 'rejectOrder']); // Confirm order
+    Route::patch('/order-items/{order_item}/reject', [\App\Http\Controllers\Api\Supplier\OrderController::class, 'rejectOrderItem']); // Confirm order
+
+    //pay and refund orders
+    Route::patch('/orders/{order}/pay', [\App\Http\Controllers\Api\Supplier\OrderController::class, 'payOrder']); // Confirm order
+    Route::patch('/orders/{order}/refund', [\App\Http\Controllers\Api\Supplier\OrderController::class, 'refundOrder']); // Confirm order
+
+    //dispatch , airwaybill and deliver the order.
+    Route::patch('/orders/{order}/dispatch', [\App\Http\Controllers\Api\Supplier\OrderController::class, 'dispatchOrder']); // Confirm order
+    Route::patch('/orders/{order}/airway-bill', [\App\Http\Controllers\Api\Supplier\OrderController::class, 'downloadAirwayBill']); // Download airway bill
+    Route::patch('/orders/{order}/deliver', [\App\Http\Controllers\Api\Supplier\OrderController::class, 'deliverOrder']); // Confirm order
 
 
     Route::get('/analytics/products-sales', [\App\Http\Controllers\Api\Supplier\AnalyticsController::class, 'getProductSales']);
