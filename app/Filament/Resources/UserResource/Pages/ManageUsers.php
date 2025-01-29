@@ -1,10 +1,10 @@
 <?php
-
 namespace App\Filament\Resources\UserResource\Pages;
-
-use App\Filament\Resources\UserResource;
-use Filament\Actions;
 use Filament\Resources\Pages\ManageRecords;
+use Illuminate\Database\Eloquent\Builder;
+use App\Filament\Resources\UserResource;
+use Filament\Resources\Components\Tab;
+use Filament\Actions;
 
 class ManageUsers extends ManageRecords
 {
@@ -14,6 +14,17 @@ class ManageUsers extends ManageRecords
     {
         return [
             Actions\CreateAction::make(),
+        ];
+    }
+  
+    public function getTabs(): array
+    {
+        return [
+            'all' => Tab::make('All'),
+            'active' => Tab::make('Active')
+                ->modifyQueryUsing(fn(Builder $query) => $query->where('active', true)),
+            'inactive' => Tab::make('Inactive')
+                ->modifyQueryUsing(fn(Builder $query) => $query->where('active', false)),
         ];
     }
 }

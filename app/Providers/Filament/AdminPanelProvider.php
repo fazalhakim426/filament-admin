@@ -99,13 +99,13 @@ class AdminPanelProvider extends PanelProvider
                 ])
                 ->sort(2),
 
-            NavigationGroup::make('Group 3')
-                ->icon('heroicon-o-archive')
-                ->items([
-                    // Your resources for Group 3
-                    \Filament\Resources\ReportResource::class,
-                ])
-                ->sort(3),
+            // NavigationGroup::make('Group 3')
+            //     ->icon('heroicon-o-archive')
+            //     ->items([
+            //         // Your resources for Group 3
+            //         \Filament\Resources\ReportResource::class,
+            //     ])
+            //     ->sort(3),
         ];
     }
 }

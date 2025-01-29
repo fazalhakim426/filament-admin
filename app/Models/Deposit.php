@@ -13,7 +13,6 @@ class Deposit extends Model
     protected $fillable = [
         'user_id',
         'order_id',
-        'order_supplier_user_id',
         'amount',
         'transaction_type',
         'deposit_type',
@@ -32,6 +31,7 @@ class Deposit extends Model
             $deposit->update(['balance' => $deposit->user->balance + $adjustment]);
             $deposit->user->update(['balance' => $deposit->user->balance + $adjustment]);
         });
+
         static::deleted(function ($deposit) {
             $adjustment = $deposit->transaction_type == 'credit' ? $deposit->amount : -$deposit->amount;
             $adjustment = $adjustment * -1;

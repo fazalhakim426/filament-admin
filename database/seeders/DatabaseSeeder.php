@@ -4,8 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
-use Spatie\Permission\Models\Role;  
+use Illuminate\Support\Facades\Hash; 
 use App\Models\City; 
 use Illuminate\Support\Str;
 class DatabaseSeeder extends Seeder
@@ -15,7 +14,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RoleSeeder::class,
             CategorySeeder::class,
-            CitiesSeeder::class
+            LocationSeeder::class
         ]);
         $user = User::updateOrCreate(
             [
@@ -38,7 +37,6 @@ class DatabaseSeeder extends Seeder
         // Grant all permissions to admin
         // $adminRole = Role::updateOrCreate(['name' => 'Super Admin']);  
         $user->assignRole('Super Admin');
-
         // Assign all permissions to the admin role
         // $allPermissions = Permission::all();
         // $adminRole->syncPermissions($allPermissions);

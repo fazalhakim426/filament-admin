@@ -8,12 +8,14 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class City extends Model
 {
-    use HasFactory,SoftDeletes; 
+    use HasFactory; 
     protected $fillable = ['name'];
-
+    public $timestamps  = false;
     function users() {
         return $this->hasMany(User::class);
     }
-
+    function state() {
+        return $this->belongsTo(State::class);
+    } 
 
 }

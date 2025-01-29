@@ -89,9 +89,7 @@ class DepositResource extends Resource
                 ->badge()
                 ->label('Type')
                 ->color(fn ($record) => $record->transaction_type === 'credit' ? 'success' : 'danger') // Conditional badge color
-                ,
-                Tables\Columns\TextColumn::make('deposit_type')
-                    ->searchable(),
+                , 
                 Tables\Columns\TextColumn::make('balance')
                     ->numeric()
                     ->sortable(),
@@ -111,7 +109,7 @@ class DepositResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
            
                 //
-            ])
+            ])->defaultSort('created_at', 'desc')
             ->filters([
                 //
             ])

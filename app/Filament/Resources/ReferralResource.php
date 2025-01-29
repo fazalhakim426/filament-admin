@@ -10,8 +10,6 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ReferralResource extends Resource
 {
@@ -39,6 +37,8 @@ class ReferralResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('orderItem.product.name')
                     ->searchable(),
+                Tables\Columns\TextColumn::make('orderItem.order.warehouse_number')
+                    ->searchable(),
                 Tables\Columns\IconColumn::make('reward_released')
                     ->label('Released')
                     ->boolean(),
@@ -60,19 +60,12 @@ class ReferralResource extends Resource
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-            ])
+            ])->defaultSort('created_at', 'desc')
             ->filters([
                 //
             ])
             ->actions([])
             ->bulkActions([]);
-    }
-
-    public static function getRelations(): array
-    {
-        return [
-            //
-        ];
     }
 
     public static function getPages(): array

@@ -22,6 +22,7 @@ To fulfill the requirements for the Supplier and Reseller (Customer) Apps, the f
 #### 4. **Order Management**
 - `GET /api/orders` — View incoming customer orders.
 - `GET /api/orders/{order_id}` — View details of a specific order.
+            $table->string('provider');
 - `PATCH /api/orders/{order_id}/confirm` — Confirm an order.
 - `PATCH /api/orders/{order_id}/reject` — Reject an order.
 - `PATCH /api/orders/{order_id}/dispatch` — Update order status to dispatched.

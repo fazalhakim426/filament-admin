@@ -19,7 +19,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 class InventoryMovementResource extends Resource
 {
     protected static ?string $model = InventoryMovement::class;
-    protected static ?string $navigationGroup = 'Products & Orders';
+    protected static ?string $navigationGroup = 'Shop';
+    protected static ?string $slug = 'shop/inventroy';
 
     protected static ?string $navigationIcon = 'heroicon-o-archive-box';
     protected static ?string $navigationLabel = 'Inventory';
@@ -122,7 +123,7 @@ class InventoryMovementResource extends Resource
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-            ])
+            ])->defaultSort('created_at', 'desc')
             ->filters([
                 //
             ])

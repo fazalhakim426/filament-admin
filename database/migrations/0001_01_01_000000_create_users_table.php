@@ -9,13 +9,24 @@ return new class extends Migration
     public function up()
     {
 
-        Schema::create('cities', function (Blueprint $table) {
+        Schema::create('countries', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->timestamps();
-
-            $table->softDeletes();
+            $table->string('code');
         });
+        Schema::create('states', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('country_id')->constrained('countries');
+            $table->string('name');
+        });
+
+        Schema::create('cities', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('state_id')->constrained('states');
+            $table->string('name');
+        });
+
+
 
         Schema::create('categories', function (Blueprint $table) {
             $table->id();
@@ -46,6 +57,7 @@ return new class extends Migration
             $table->string('profile_photo_path', 2048)->nullable();
             $table->foreignId('city_id')->nullable()->constrained('cities');
             $table->text('address')->nullable();
+
             $table->string('contact_number')->nullable();
             $table->string('whatsapp_number')->nullable();
             $table->string('referral_code')->nullable()->unique();
@@ -80,8 +92,6 @@ return new class extends Migration
             $table->timestamps();
             //indexing  
         });
-
-
         // Products table
         Schema::create('products', function (Blueprint $table) {
             $table->id();
@@ -109,11 +119,25 @@ return new class extends Migration
             $table->string('description');
             $table->timestamps();
         });
-
+        Schema::create('addresses', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->constrained('users');
+            $table->string('name');
+            $table->string('email');
+            $table->string('country_id')->constrained('countries');
+            $table->string('city_id')->constrained('cities');
+            $table->string('state_id')->constrained('states');;
+            $table->string('phone')->nullable();
+            $table->string('street')->nullable();
+            $table->string('zip')->nullable();
+            $table->timestamps();
+        });
         // Orders table
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
             $table->string('warehouse_number');
+            $table->foreignId('recipient_id')->constrained('addresses');
+            $table->foreignId('sender_id')->constrained('addresses');
             $table->foreignId('customer_user_id')->constrained('users')->onDelete('cascade');
             $table->decimal('total_price', 10, 2);
             $table->enum('status', ['pending', 'confirmed', 'paid', 'refund', 'shipped', 'delivered', 'canceled'])->default('pending');
@@ -124,20 +148,21 @@ return new class extends Migration
         });
         Schema::create('order_items', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('order_id')->constrained('orders');// 1
-            $table->foreignId('product_id')->constrained('products');//a,b 
+            $table->foreignId('order_id')->constrained('orders'); // 1
+            $table->foreignId('product_id')->constrained('products'); //a,b 
             $table->foreignId('supplier_user_id')->constrained('users'); //for searching purpose the get saled items directly not through products and order.for future use.
-            $table->integer('quantity');//1
+            $table->integer('quantity'); //1
             $table->decimal('profit', 10, 2); // ( unit_selling_price  - unit_cost_price ) * quantity
             $table->decimal('price', 10, 2); //quantity * unit selling price 200
             $table->decimal('unit_cost_price', 10, 2); // 90 
             $table->enum('status', ['pending', 'confirmed', 'canceled'])->default('pending');
             //item status handle by supplier as the item belong to supplier.
-            $table->decimal('unit_selling_price', 10, 2);//100
+            $table->decimal('unit_selling_price', 10, 2); //100
 
 
             //To dedect profit made by suppliers.supplier cant updte this value need to create another product if selling value is different
         });
+
 
         // Referrals table
         Schema::create('referrals', function (Blueprint $table) {
@@ -146,7 +171,7 @@ return new class extends Migration
             $table->foreignId('reseller_user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('order_item_id')->constrained('order_items')->onDelete('cascade');
             $table->boolean('reward_released')->default(false);
-            $table->decimal('reward_amount', 10, 2)->default(0.00);// 100
+            $table->decimal('reward_amount', 10, 2)->default(0.00); // 100
             $table->string('referral_code')->nullable();
             $table->softDeletes();
             $table->timestamps();
@@ -161,6 +186,8 @@ return new class extends Migration
             $table->decimal('amount', 10, 2);
             $table->enum('transaction_type', ['debit', 'credit']);
             $table->string('deposit_type');
+            $table->string('currency')->default('PKR');
+            $table->string('provider')->nullable();
             $table->decimal('balance', 10, 2)->default(0);
             $table->string('description')->nullable();
             $table->timestamps();
@@ -211,7 +238,8 @@ return new class extends Migration
         Schema::dropIfExists('referrals');
         Schema::dropIfExists('order_items');
         Schema::dropIfExists('inventory_movements');
-        Schema::dropIfExists('orders');
+        Schema::dropIfExists('orders'); 
+        Schema::dropIfExists('addresses');
         Schema::dropIfExists('products');
         Schema::dropIfExists('supplier_details');
         Schema::dropIfExists('user_profiles');
@@ -219,5 +247,7 @@ return new class extends Migration
         Schema::dropIfExists('roles');
         Schema::dropIfExists('categories');
         Schema::dropIfExists('cities');
+        Schema::dropIfExists('states');
+        Schema::dropIfExists('countries');
     }
 };

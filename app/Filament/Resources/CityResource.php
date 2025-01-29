@@ -7,6 +7,7 @@ use App\Filament\Resources\CityResource\RelationManagers;
 use App\Models\City;
 use App\Models\User;
 use Filament\Forms;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -29,6 +30,12 @@ class CityResource extends Resource
                 Forms\Components\TextInput::make('name')
                     ->required()
                     ->maxLength(255),
+                    Select::make('state_id')
+                    ->label('State')
+                    ->relationship('state', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->required(),
             ]);
     }
     protected function getTableQuery(): Builder
@@ -41,8 +48,16 @@ class CityResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->searchable()
+                    ->sortable(),
+                    
+                Tables\Columns\TextColumn::make('state.name')
+                ->searchable()
+                ->sortable(),
+                
+                Tables\Columns\TextColumn::make('state.country.name')
+                    ->searchable()
                     ->sortable()
-            ])
+            ])->defaultSort('created_at', 'desc')
             ->filters([
                 // Additional filters if necessary
             ])

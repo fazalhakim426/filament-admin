@@ -5,11 +5,14 @@ namespace App\Models;
 use Althinect\FilamentSpatieRolesPermissions\Concerns\HasSuperAdmin;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Support\Facades\Hash;
+use App\Models\Deposit;
 
 class User extends Authenticatable
 {
@@ -56,30 +59,48 @@ class User extends Authenticatable
     {
         return $this->hasMany(Product::class, 'supplier_user_id', 'id');
     }
- 
+
     function supplierDetail()
     {
-        return $this->hasOne(SupplierDetail::class, 'user_id','id');
+        return $this->hasOne(SupplierDetail::class, 'user_id', 'id');
     }
 
-    function orders()
+    function orderAsCustomer()
     {
-        return $this->belongsToMany(Order::class);
+        return $this->hasMany(Order::class, 'customer_user_id');
     }
     function supplierOrderItems()
     {
-        return $this->hasMany(OrderItem::class,'supplier_user_id','id');
+        return $this->hasMany(OrderItem::class, 'supplier_user_id', 'id');
     }
     //supplier order
     public function ordersAsSupplier()
     {
         return $this->hasManyThrough(Order::class, OrderItem::class, 'supplier_user_id', 'id', 'id', 'order_id')
-                    ->distinct(); // Using distinct to ensure unique orders are returned
-    } 
-
+            ->distinct(); // Using distinct to ensure unique orders are returned
+    }
+    
     function city()
     {
         return $this->belongsTo(City::class);
+    }
+    public function addresses()
+    {
+        return $this->hasMany(Address::class);
+    }
+
+    public function deposits(): HasMany
+    {
+        return $this->hasMany(Deposit::class, 'user_id');
+    }
+
+    public function depositAsReferrals(): HasMany
+    {
+        return $this->hasMany(Deposit::class, 'referral_id');
+    }
+    public function referrals(): HasMany
+    {
+        return $this->hasMany(Referral::class, 'reseller_user_id');
     }
 
     protected static function boot()

@@ -22,16 +22,16 @@ class ProductResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-archive-box';
     // protected static ?int $navigationSort = 2;
-    protected static ?string $navigationGroup = 'Products & Orders';
+    protected static ?string $navigationGroup = 'Shop';
     protected static ?string $recordTitleAttribute = 'name';
-    
-   
+
+
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                
+
                 Select::make('supplier_user_id')
                     ->label('Supplier')
                     ->relationship('supplierUser', 'name', function (Builder $query) {
@@ -40,7 +40,7 @@ class ProductResource extends Resource
                             $query->where('name', 'Supplier'); // Assuming your roles are stored by name
                         });
                     })
-                    ->searchable() 
+                    ->searchable()
                     ->preload()
                     ->required(),
                 Select::make('category_id')
@@ -61,7 +61,7 @@ class ProductResource extends Resource
                     ->columnSpanFull(),
                 Forms\Components\TextInput::make('name')
                     ->required()
-                    ->maxLength(255), 
+                    ->maxLength(255),
                 Forms\Components\TextInput::make('unit_selling_price')
                     ->required()
                     ->numeric()
@@ -83,7 +83,7 @@ class ProductResource extends Resource
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('name')
-                    ->searchable(), 
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('unit_selling_price')
                     ->label('Selling')
                     ->money()
@@ -110,7 +110,7 @@ class ProductResource extends Resource
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-            ])
+            ])->defaultSort('created_at', 'desc')
             ->filters([
                 //
             ])
