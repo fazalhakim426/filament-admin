@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Models\User;
 use App\Models\Category;
 use App\Models\Role;
+use App\Models\SubCategory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -24,15 +25,16 @@ class SupplierDetailFactory extends Factory
      */
     public function definition(): array
     {
-        // ['role_id' => Role::where('name', 'supplier')->first()->id]
+        
+        $subCategory = SubCategory::inRandomOrder()->first(); 
         return [
             'user_id' => User::factory(),
             'business_name' => $this->faker->company(),
             'contact_person' => $this->faker->name(),
             'website' => $this->faker->url(),
             'supplier_type' => $this->faker->randomElement(['wholesale', 'retail', 'distributor']),
-            'main_category_id' => Category::inRandomOrder()->first()->id,
-            'secondary_category_id' => Category::inRandomOrder()->first()->id,
+            'category_id' =>$subCategory->category_id,
+            'sub_category_id' => $subCategory->id,
             'product_available' => $this->faker->numberBetween(1, 100),
             'product_source' => $this->faker->randomElement(['imported', 'local']),
             'product_unit_quality' => $this->faker->word(),

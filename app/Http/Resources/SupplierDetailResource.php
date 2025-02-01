@@ -13,14 +13,14 @@ class SupplierDetailResource extends JsonResource
      * @return array<string, mixed>
      */
     public function toArray(Request $request): array
-    { 
+    {
         return [
             'business_name' => $this->business_name,
             'contact_person' => $this->contact_person,
             'website' => $this->website,
             'supplier_type' => $this->supplier_type,
-            'main_category_id' => $this->main_category_id,
-            'secondary_category_id' => $this->secondary_category_id,
+            'category_id' => $this->category_id,
+            'sub_category_id' => $this->sub_category_id,
             'product_available' => $this->product_available,
             'product_source' => $this->product_source,
             'product_unit_quality' => $this->product_unit_quality,

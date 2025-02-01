@@ -86,7 +86,7 @@ class InventoryMovementResource extends Resource
                     ->required(),
 
                 // Unit Cost Price
-                TextInput::make('unit_cost_price')
+                TextInput::make('unit_price')
                     ->label('Unit Cost Price')
                     ->required()
                     ->numeric(),
@@ -101,8 +101,12 @@ class InventoryMovementResource extends Resource
                 TextColumn::make('supplierUser.name')
                     ->label('Supplier')
                     ->searchable(),
-                TextColumn::make('product.name')
-                    ->searchable(),
+                    TextColumn::make('orderItem.order.warehouse_number')
+                        ->label('Order')
+                        ->searchable(),
+                        TextColumn::make('product.name')
+                            ->label('Product')
+                            ->searchable(),
                 TextColumn::make('quantity')
                     ->numeric()
                     ->sortable(),
@@ -111,8 +115,8 @@ class InventoryMovementResource extends Resource
                     ->color(fn($record) => $record->type === 'deduction' ? 'danger' : 'primary') // Conditional badge color
 
                     ->sortable(),
-                TextColumn::make('unit_cost_price')
-                    ->label('Unit Cost')
+                TextColumn::make('unit_price')
+                    ->label('Unit Price')
                     ->numeric()
                     ->sortable(),
                 TextColumn::make('created_at')

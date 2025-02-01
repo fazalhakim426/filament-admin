@@ -51,12 +51,12 @@
                                         "type": "string",
                                         "example": "1"
                                     },
-                                    "contact_number": {
+                                    "phone": {
                                         "description": "Customer's contact number (optional)",
                                         "type": "string",
                                         "example": "+123456789"
                                     },
-                                    "whatsapp_number": {
+                                    "whatsapp": {
                                         "description": "Customer's WhatsApp number (optional)",
                                         "type": "string",
                                         "example": "+987654321"
@@ -200,13 +200,13 @@
                                         "example": "1",
                                         "nullable": true
                                     },
-                                    "contact_number": {
+                                    "phone": {
                                         "description": "Contact number of the user",
                                         "type": "string",
                                         "example": "123456789",
                                         "nullable": true
                                     },
-                                    "whatsapp_number": {
+                                    "whatsapp": {
                                         "description": "WhatsApp number of the user",
                                         "type": "string",
                                         "example": "987654321",
@@ -252,13 +252,13 @@
                                         "example": "Retail",
                                         "nullable": true
                                     },
-                                    "main_category_id": {
+                                    "category_id": {
                                         "description": "ID of the main product category",
                                         "type": "integer",
                                         "example": 5,
                                         "nullable": true
                                     },
-                                    "secondary_category_id": {
+                                    "sub_category_id": {
                                         "description": "ID of the secondary product category",
                                         "type": "integer",
                                         "example": 10,
@@ -403,11 +403,11 @@
                                                             "type": "string",
                                                             "example": "Retail"
                                                         },
-                                                        "main_category_id": {
+                                                        "category_id": {
                                                             "type": "integer",
                                                             "example": 5
                                                         },
-                                                        "secondary_category_id": {
+                                                        "sub_category_id": {
                                                             "type": "integer",
                                                             "example": 10
                                                         },

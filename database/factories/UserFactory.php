@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Address;
 use App\Models\City;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -25,17 +26,25 @@ class UserFactory extends Factory
     public function definition(): array
     {
 
+        $city = City::inRandomOrder()->first();
+        $state = $city->state;
+        $country = $state->country;
         return [
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
-            'remember_token' => Str::random(10), 
-            'city_id' => City::inRandomOrder()->first()->id, // Random city from cities table 
+            'remember_token' => Str::random(10),  
             'referral_code' => Str::upper(Str::random(8)), 
-            'contact_number' => fake()->phoneNumber(),
-            'whatsapp_number' => fake()->phoneNumber(), 
-            'address' => fake()->address(),  
+            'address'=> $this->faker->address(),
+            'phone' => $this->faker->phoneNumber(),
+            'whatsapp' => $this->faker->phoneNumber(),
+            'street' => $this->faker->streetAddress(),
+
+            'country_id' => $country->id,
+            'city_id' => $city->id,
+            'state_id' => $state->id,
+            'zip' => $this->faker->postcode()
         ];
     }
 

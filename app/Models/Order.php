@@ -8,10 +8,14 @@ use Illuminate\Database\Eloquent\Model;
 class Order extends Model
 {
     use HasFactory;
-    function products()
+    public $fillable = ['warehouse_number', 'customer_user_id', 'recipient_id', 'sender_id', 'total_price', 'status'];
+
+    
+    public function products()
     {
-        return $this->belongsToMany(Product::class, 'order_items', 'order_id', 'product_id')->withPivot('amount');
+        return $this->belongsToMany(Product::class,'order_items')->withPivot(['id', 'supplier_user_id', 'quantity', 'price']);
     }
+
     function user()
     {
         return $this->belongsTo(User::class);
@@ -43,5 +47,13 @@ class Order extends Model
         $randomNumber = str_pad(mt_rand(0, 999999), 5, '0', STR_PAD_LEFT); // 5 digits: Random padded to ensure length
 
         return "WH{$timestamp}{$randomNumber}PK";
+    }
+    function sender()
+    {
+        return $this->belongsTo(Address::class, 'sender_id');
+    }
+    function recipient()
+    {
+        return $this->belongsTo(Address::class, 'recipient_id');
     }
 }

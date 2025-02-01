@@ -126,7 +126,7 @@ class OrderController extends Controller
     {
         if ($order->status !== 'paid') {
             return response()->json([
-                'message' => 'Only paid orders can be refund.',
+                'message' => 'Only paid orders can be refunded.',
             ], 400);
         }
 

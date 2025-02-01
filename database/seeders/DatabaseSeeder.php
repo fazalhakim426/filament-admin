@@ -4,9 +4,10 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash; 
-use App\Models\City; 
+use Illuminate\Support\Facades\Hash;
+use App\Models\City;
 use Illuminate\Support\Str;
+
 class DatabaseSeeder extends Seeder
 {
     public function run(): void
@@ -21,19 +22,20 @@ class DatabaseSeeder extends Seeder
                 'email' => 'admin@manzil.com', // Search criteria
             ],
             [
-            'name' => 'Admin', 
-            'email_verified_at' => now(),
-            'password' => Hash::make('password'),
-            'remember_token' => Str::random(10), 
-            'city_id' => City::inRandomOrder()->first()->id, // Random city from cities table 
-            'referral_code' => Str::upper(Str::random(8)),
-            'balance' => 0,
-            'contact_number' => fake()->phoneNumber(),
-            'whatsapp_number' => fake()->phoneNumber(), 
-            'address' => fake()->address(),  
-        ]);
+                'name' => 'Admin',
+                'email_verified_at' => now(),
+                'password' => Hash::make('password'),
+                'remember_token' => Str::random(10),
+                'city_id' => City::inRandomOrder()->first()->id, // Random city from cities table 
+                'referral_code' => Str::upper(Str::random(8)),
+                'balance' => 0,
+                'phone' => fake()->phoneNumber(),
+                'whatsapp' => fake()->phoneNumber(),
+                'address' => fake()->address(),
+            ]
+        );
 
-     
+
         // Grant all permissions to admin
         // $adminRole = Role::updateOrCreate(['name' => 'Super Admin']);  
         $user->assignRole('Super Admin');
@@ -42,8 +44,10 @@ class DatabaseSeeder extends Seeder
         // $adminRole->syncPermissions($allPermissions);
 
 
-        $this->call([SupplierDetailSeeder::class, ReferralsSeeder::class,
-        EmployeeSeeder::class
-    ]);
+        $this->call([
+            SupplierDetailSeeder::class,
+            ReferralsSeeder::class,
+            EmployeeSeeder::class
+        ]);
     }
 }

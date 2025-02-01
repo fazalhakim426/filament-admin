@@ -6,10 +6,14 @@ use App\Filament\Resources\DepositResource\Pages;
 use App\Filament\Resources\DepositResource\RelationManagers;
 use App\Models\Deposit;
 use Filament\Forms;
+use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Resources\Resource; 
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -26,102 +30,95 @@ class DepositResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('transaction_reference')
-                    ->disabled() // Makes the field read-only
-                    ->default(fn() => 'TRX-' . strtoupper(\Illuminate\Support\Str::random(10)))
-                    ->maxLength(255),
                 Select::make('user_id')
-                    ->relationship('user', 'email')
-                    ->searchable()->preload()
+                    ->label('Deposited By')
+                    ->relationship('user', 'name')
+                    ->searchable()
                     ->required(),
-                // Select::make('order_id')
-                //     ->relationship('order','id'),
-                // Select::make('referral_id')
-                //     ->relationship('referrel','reward_amount'),
-                Forms\Components\TextInput::make('amount')
-                    ->required()
-                    ->numeric(),
-                Forms\Components\Select::make('transaction_type')
-                    ->label('Transaction Type')
-                    ->required()
+    
+                Select::make('transaction_type')
                     ->options([
-                        'credit' => 'credit',
-                        'debit' => 'debit',
+                        'credit' => 'Credit',
+                        'debit' => 'Debit',
                     ])
-                    ->default('credit'), // Optional: Set a default value
-
-                Forms\Components\Select::make('deposit_type')
+                    ->required(),
+    
+                TextInput::make('amount')
+                    ->numeric()
+                    ->required(),
+    
+                Radio::make('deposit_category')
                     ->label('Deposit Type')
-                    ->required()
                     ->options([
-                        'bank' => 'Bank',
-                        'cash' => 'Cash',
+                        'order' => 'Order Deposit',
+                        'referral' => 'Referral Deposit',
+                        'user' => 'User Transaction',
                     ])
-                    ->default('Bank'),
-
-                Forms\Components\TextInput::make('description')
-                    ->maxLength(255),
+                    ->live()
+                    ->required(),
+    
+                Select::make('order_id')
+                    ->label('Order')
+                    ->relationship('order', 'id')
+                    ->searchable()
+                    ->hidden(fn (callable $get) => $get('deposit_category') !== 'order'), // Show only if Order Deposit selected
+    
+                Select::make('referral_id')
+                    ->label('Referral')
+                    ->relationship('referral', 'id')
+                    ->searchable()
+                    ->hidden(fn (callable $get) => $get('deposit_category') !== 'referral'), // Show only if Referral Deposit selected
+    
+                TextInput::make('deposit_type')
+                    ->required(),
+    
+                TextInput::make('currency')
+                    ->default('PKR')
+                    ->required(),
+    
+                TextInput::make('provider')
+                    ->nullable(),
+    
+                Textarea::make('description')
+                    ->nullable(),
             ]);
     }
+    
 
     public static function table(Table $table): Table
     {
         return $table
-            ->columns([ 
-                // Transaction reference
-                Tables\Columns\TextColumn::make('transaction_reference')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('user.email')
-                    ->label('Email')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('user.name')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('order.price')
-                    ->default('No order')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('referral.user.name')
-                    ->default('Not referral')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('amount')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('transaction_type') 
+            ->columns([
+                TextColumn::make('transaction_reference')->sortable(),
+                TextColumn::make('user.name')->label('Deposited By')->sortable(),
+                TextColumn::make('order.id')->label('Order ID')->sortable(),
+                TextColumn::make('referral.id')->label('Referral ID')->sortable(),
+                TextColumn::make('amount')->money('PKR')->sortable(), 
+                TextColumn::make('transaction_type') 
                 ->badge()
                 ->label('Type')
-                ->color(fn ($record) => $record->transaction_type === 'credit' ? 'success' : 'danger') // Conditional badge color
-                , 
-                Tables\Columns\TextColumn::make('balance')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('description')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('deleted_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-           
-                //
-            ])->defaultSort('created_at', 'desc')
+                ->color(fn ($record) => $record->transaction_type === 'credit' ? 'success' : 'danger'),
+                TextColumn::make('deposit_type')->sortable(), 
+                TextColumn::make('provider')->sortable(),
+                TextColumn::make('description')->limit(50),
+                TextColumn::make('created_at')->label('Date')->date(),
+            ])
             ->filters([
-                //
+                Filter::make('Orders')
+                    ->query(fn (Builder $query) => $query->whereNotNull('order_id'))
+                    ->label('Order Deposits'),
+                    
+                Filter::make('Referrals')
+                    ->query(fn (Builder $query) => $query->whereNotNull('referral_id'))
+                    ->label('Referral Deposits'),
+    
+                Filter::make('User Transactions')
+                    ->query(fn (Builder $query) => $query->whereNull('order_id')->whereNull('referral_id'))
+                    ->label('User Transactions'),
             ])
-            ->actions([ 
-                Tables\Actions\DeleteAction::make(),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
-            ]);
+            ->defaultSort('created_at', 'desc');
     }
+    
 
     public static function getPages(): array
     {

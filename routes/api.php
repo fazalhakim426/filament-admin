@@ -39,9 +39,9 @@ Route::middleware(['auth:sanctum'])->prefix('supplier')->group(function () {
     Route::patch('/orders/{order}/reject', [\App\Http\Controllers\Api\Supplier\OrderController::class, 'rejectOrder']); // Confirm order
     Route::patch('/order-items/{order_item}/reject', [\App\Http\Controllers\Api\Supplier\OrderController::class, 'rejectOrderItem']); // Confirm order
 
-    //pay and refund orders
+    //pay and refunded orders
     Route::patch('/orders/{order}/pay', [\App\Http\Controllers\Api\Supplier\OrderController::class, 'payOrder']); // Confirm order
-    Route::patch('/orders/{order}/refund', [\App\Http\Controllers\Api\Supplier\OrderController::class, 'refundOrder']); // Confirm order
+    Route::patch('/orders/{order}/refunded', [\App\Http\Controllers\Api\Supplier\OrderController::class, 'refundOrder']); // Confirm order
 
     //dispatch , airwaybill and deliver the order.
     Route::patch('/orders/{order}/dispatch', [\App\Http\Controllers\Api\Supplier\OrderController::class, 'dispatchOrder']); // Confirm order

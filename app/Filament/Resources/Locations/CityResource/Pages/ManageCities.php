@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\Resources\CityResource\Pages;
+namespace App\Filament\Resources\Locations\CityResource\Pages;
 
-use App\Filament\Resources\CityResource;
+use App\Filament\Resources\Locations\CityResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ManageRecords;
 

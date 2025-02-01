@@ -4,24 +4,41 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 class Deposit extends Model
 {
     use HasFactory, SoftDeletes;
+
     protected $fillable = [
+        'transaction_reference',
         'user_id',
         'order_id',
+        'referral_id',
         'amount',
         'transaction_type',
         'deposit_type',
-        'transaction_reference'
+        'currency',
+        'provider',
+        'balance',
+        'description',
     ];
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
+
+    public function order(): BelongsTo
+    {
+        return $this->belongsTo(Order::class);
+    } 
+
+    public function referral(): BelongsTo
+    {
+        return $this->belongsTo(Referral::class);
+    } 
 
     protected static function booted()
     {
@@ -38,14 +55,5 @@ class Deposit extends Model
             $deposit->update(['balance' => $deposit->user->balance + $adjustment]);
             $deposit->user->update(['balance' => $deposit->user->balance + $adjustment]);
         });
-    }
-    function order()
-    {
-        return $this->belongsTo(Order::class, 'order_id', 'id');
-    }
-
-    function referrel()
-    {
-        return $this->belongsTo(Referral::class, 'referrel_id', 'id');
     }
 }

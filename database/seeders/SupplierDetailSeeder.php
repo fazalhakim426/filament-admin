@@ -27,61 +27,57 @@ class SupplierDetailSeeder extends Seeder
                     'product_id' => $product->id,
                     'type' => 'addition',
                     'quantity' => mt_rand(50, 200),
-                    'unit_cost_price' => mt_rand(50, 300), // Example cost price between 10 and 50
+                    'unit_price' => mt_rand(50, 300), // Example cost price between 10 and 50
                 ]);
             });
             // Create users and assign the "customer" role
             User::factory(3)->create()->each(function ($user) use ($supplierDetail) {
-                // Assign the "customer" role to the user
-                $user->assignRole('customer'); // Assign role using Spatie's method
-
-                $totalPrice = mt_rand(100, 500);
-
+                $user->assignRole('customer');
                 $addresses = Address::factory(2)->create([
-                    'user_id'=>$user->id, 
+                    'user_id' => $user->id,
                 ]);
- 
-                    // Create orders for the customer
-                    Order::factory(3)->create([
-                        'customer_user_id' => $user->id,
-                        'recipient_id' => $addresses[1]->id,
-                        'sender_id' => $addresses[0]->id,
-                        'total_price' => $totalPrice
-                    ])->each(function ($order) use ($user, $supplierDetail, $totalPrice) {
-                        $quantity = mt_rand(1, 4);
-                        $unit_selling_price = number_format($totalPrice / $quantity, 2);
-                        $unit_cost_price = $unit_selling_price - 10; // Price is 10 rupees per dollar
-                        $profit = ($unit_selling_price - $unit_cost_price) * $quantity;
-                        // Attach products to the order
-                        $products = Product::inRandomOrder()->take(3)->get();
-
-                        foreach ($products as $product) {
-                            $order->products()->attach($product->id, [
-                                'supplier_user_id' => $supplierDetail->user->id,
+                $quantity = mt_rand(1, 4);
+                $products = Product::inRandomOrder()->take(3)->get();   
+                // Create orders for the customer
+                Order::factory(3)->create([
+                    'customer_user_id' => $user->id,
+                    'recipient_id' => $addresses[1]->id,
+                    'sender_id' => $addresses[0]->id,
+                    'total_price' => $products->sum('unit_selling_price'),
+                ])->each(function ($order) use ($user, $supplierDetail, $quantity, $products) {
+                    foreach ($products as $product) { 
+                        $order->products()->syncWithoutDetaching([
+                            $product->id => [
+                                'supplier_user_id' => $supplierDetail->user_id,
                                 'quantity' => $quantity,
-                                'price' => $totalPrice,
-                                'profit' => $profit,
-                                'unit_cost_price' => $unit_cost_price,
-                                'unit_selling_price' => $unit_selling_price,
-                            ]);
+                                'price' => $product->unit_selling_price,
+                            ]
+                        ]);
+                         
+                        $item = $order->products()->where('product_id', $product->id)->first(); 
+                        
+                        if ($item) {
                             InventoryMovement::factory()->create([
                                 'supplier_user_id' => $supplierDetail->user->id,
+                                'order_item_id' => $item->pivot->id, // Use pivot table ID
                                 'product_id' => $product->id,
                                 'type' => 'deduction',
                                 'quantity' => $quantity,
-                                'unit_cost_price' => $unit_cost_price
+                                'unit_price' => $product->unit_selling_price,
+                                'total_price' => $product->unit_selling_price * $quantity
                             ]);
                         }
+                    }
 
-                        // Add deposits for the order
-                        Deposit::factory()->create([
-                            'user_id' => $user->id,
-                            'order_id' => $order->id,
-                            'amount' => $totalPrice,
-                            'deposit_type' => 'debit',
-                            'description' => "Payment for $order->name "
-                        ]);
-                    }); 
+                    // Add deposits for the order
+                    Deposit::factory()->create([
+                        'user_id' => $user->id,
+                        'order_id' => $order->id,
+                        'amount' => $products->sum('total_price'),
+                        'deposit_type' => 'debit',
+                        'description' => "Payment for $order->warehouse_number "
+                    ]);
+                });
             });
         });
     }

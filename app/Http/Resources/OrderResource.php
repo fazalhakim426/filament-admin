@@ -24,8 +24,7 @@ class OrderResource extends JsonResource
                 'updated_at' => $this->updated_at->diffForHumans(),
                 'need_to_pay' =>$this->need_to_pay,
                 'items' =>   OrderItemResource::collection($this->items),
-                'customer' => new UserResource($this->customerUser),
-                // 'deposits' => DepositResource::collection($this->deposits),
+                'customer' => new UserResource($this->customerUser)
             ];
     }
 }

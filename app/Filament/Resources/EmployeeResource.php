@@ -2,7 +2,7 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\UserResource\Pages;
+use App\Filament\Resources\EmployeeResource\Pages;
 use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Components\FileUpload;
@@ -18,7 +18,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class UserResource extends Resource
+class EmployeeResource extends Resource
 {
     protected static ?string $model = User::class;
 
@@ -51,10 +51,8 @@ class UserResource extends Resource
                     ->label('Email'),
                 Forms\Components\Textarea::make('address')
                     ->columnSpanFull(),
-                Forms\Components\TextInput::make('contact_number')
-                    ->maxLength(15),
-                Forms\Components\TextInput::make('whatsapp_number')
-                    ->maxLength(15),
+                Forms\Components\TextInput::make('phone')
+                    ->maxLength(15), 
                 Select::make('city_id')
                     ->label('City')
                     ->relationship(name: 'city', titleAttribute: 'name'),
@@ -64,14 +62,6 @@ class UserResource extends Resource
                     ->directory('images')
                     ->disk('public')
                     ->visibility('public'),
-                Forms\Components\Select::make('roles')
-                    ->relationship(name: 'roles', titleAttribute: 'name')
-                    ->saveRelationshipsUsing(function (Model $record, $state) {
-                        $record->roles()->sync($state);
-                    })
-                    ->multiple()
-                    ->preload()
-                    ->searchable(),
 
             ]);
     }
@@ -91,7 +81,7 @@ class UserResource extends Resource
                 TextColumn::make('name')->label('Name')->sortable()->searchable(),
                 TextColumn::make('email')->label('Email')->sortable()->searchable(),
                 Tables\Columns\IconColumn::make('active')
-                    ->boolean(), 
+                    ->boolean(),
                 // TextColumn::make('roles')
                 //     ->badge()
                 //     ->formatStateUsing(fn($state) => is_array($state) ? implode(', ', $state) : $state) // Combine roles as a comma-separated string
@@ -102,9 +92,9 @@ class UserResource extends Resource
 
                 Tables\Columns\TextColumn::make('city.name')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('contact_number')
+                Tables\Columns\TextColumn::make('phone')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('whatsapp_number')
+                Tables\Columns\TextColumn::make('whatsapp')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->dateTime()
@@ -119,8 +109,7 @@ class UserResource extends Resource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true)
             ])->defaultSort('created_at', 'desc')
-            ->filters([
-                //
+            ->filters([ 
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
@@ -135,7 +124,7 @@ class UserResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ManageUsers::route('/'),
+            'index' => Pages\ManageEmployees::route('/'),
         ];
     }
 }

@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Category;
+use App\Models\SubCategory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -22,7 +23,9 @@ class ProductFactory extends Factory
      */
     public function definition(): array
     {
-        $price = $this->faker->randomFloat(2, 40, 400);
+
+        $subCategory = SubCategory::inRandomOrder()->first();
+        $price = $this->faker->numberBetween(2,9)*10;
         $percentage = $price > 150;
         return [
             'name' => $this->faker->words(2, true), // Random product name
@@ -30,7 +33,8 @@ class ProductFactory extends Factory
             'unit_selling_price' => $price, // Random price between 40 and 400
             'stock_quantity' => $this->faker->numberBetween(1, 100), // Random stock quantity
             'sku' => $this->faker->unique()->lexify('P????'), // Unique SKU
-            'category_id' => Category::inRandomOrder()->first()->id, // Random category
+            'category_id' => $subCategory->category_id,
+            'sub_category_id' => $subCategory->id,
             'is_active' => $this->faker->boolean(90), // 90% chance of being active
             'referral_reward_value' => $percentage ? 10 : 30,
             'referral_reward_type' => $percentage ? 'percentage' : 'fixed',

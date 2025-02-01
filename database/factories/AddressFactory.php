@@ -31,6 +31,7 @@ class AddressFactory extends Factory
             'email' => $this->faker->unique()->safeEmail(),
             'phone' => $this->faker->phoneNumber(),
             'street' => $this->faker->streetAddress(),
+            'address' => $this->faker->address(),
             'country_id' => $country->id,
             'city_id' => $city->id,
             'state_id' => $state->id,

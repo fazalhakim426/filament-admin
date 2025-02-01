@@ -6,8 +6,10 @@ use App\Filament\Resources\Shop\CustomerResource\RelationManagers\PaymentsRelati
 use App\Filament\Resources\Shop\CustomerResource\RelationManagers\AddressesRelationManager;
 use App\Filament\Resources\Shop\CustomerResource\RelationManagers\OrdersRelationManager;
 use App\Filament\Resources\Shop\CustomerResource\RelationManagers\ReferralRelationManager;
-use App\Filament\Resources\Shop\UserResource\Pages;
+use App\Filament\Resources\Shop\CustomerResource\Pages;
+use App\Models\City;
 use App\Models\Referral;
+use App\Models\State;
 use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Components\FileUpload;
@@ -24,7 +26,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class UserResource extends Resource
+class CustomerResource extends Resource
 {
     protected static ?string $model = User::class;
     protected static ?string $label = 'Customers';
@@ -50,42 +52,60 @@ class UserResource extends Resource
         return $form
             ->schema([
                 Forms\Components\Section::make()
-                    ->schema([  
-            
-                            Forms\Components\TextInput::make('name')
-                                ->required()
-                                ->maxLength(50),
-                            TextInput::make('email')->email()->required()
-                                ->label('Email'),
-            
-                            FileUpload::make('profile_photo_path')
-                                ->directory('images') // Stored in storage/app/public/images
-                                ->disk('public')      // Use the public disk
-                            ->visibility('public')
-                            ,
-                            Forms\Components\Textarea::make('address')
-                                ->columnSpanFull(),
-            
-                            Forms\Components\TextInput::make('contact_number')
-                                ->maxLength(15),
-            
-                            Forms\Components\TextInput::make('whatsapp_number')
-                                ->maxLength(15),
-            
-                            Select::make('city_id')
-                                ->label('City')
-                                ->relationship(name: 'city', titleAttribute: 'name'),
-                            Forms\Components\Toggle::make('active')
-                                ->required(),
-                            Forms\Components\Select::make('roles')
-                                ->relationship(name: 'roles', titleAttribute: 'name')
-                                ->saveRelationshipsUsing(function (Model $record, $state) {
-                                    $record->roles()->sync($state);
-                                })
-                                ->multiple()
-                                ->preload()
-                                ->searchable(),
-                        
+                    ->schema([
+                        Forms\Components\TextInput::make('name')
+                            ->required()
+                            ->maxLength(50),
+                        TextInput::make('email')->email()->required()
+                            ->label('Email'),
+                        FileUpload::make('profile_photo_path')
+                            ->directory('images') // Stored in storage/app/public/images
+                            ->disk('public')      // Use the public disk
+                            ->visibility('public'),
+                        Forms\Components\Textarea::make('address')
+                            ->columnSpanFull(),
+                        Forms\Components\TextInput::make('phone')
+                            ->maxLength(15),
+                        Forms\Components\Toggle::make('active')
+                            ->required(),
+
+
+                        // Country Dropdown
+                        Select::make('country_id')
+                            ->label('Country')
+                            ->searchable()
+                            ->relationship(name: 'country', titleAttribute: 'name')
+                            ->preload()
+                            ->live(), // Makes it reactive to update state dropdown
+
+                        // State Dropdown (Dependent on Country)
+                        Select::make('state_id')
+                            ->label('State')
+                            ->searchable()
+                            ->options(
+                                fn(callable $get) =>
+                                $get('country_id')
+                                    ? State::where('country_id', $get('country_id'))->pluck('name', 'id')
+                                    : []
+                            )
+                            ->preload()
+                            ->live()
+                            ->disabled(fn(callable $get) => empty($get('country_id'))), // Disable if no country is selected
+
+                        // City Dropdown (Dependent on State)
+                        Select::make('city_id')
+                            ->label('City')
+                            ->searchable()
+                            ->options(
+                                fn(callable $get) =>
+                                $get('state_id')
+                                    ? City::where('state_id', $get('state_id'))->pluck('name', 'id')
+                                    : []
+                            )
+                            ->preload()
+                            ->live()
+                            ->disabled(fn(callable $get) => empty($get('state_id')))
+
 
                     ])
                     ->columns(2)
@@ -118,9 +138,7 @@ class UserResource extends Resource
                     ->boolean(),
                 Tables\Columns\TextColumn::make('city.name')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('contact_number')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('whatsapp_number')
+                Tables\Columns\TextColumn::make('phone')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('referral_code')
                     ->searchable(),
@@ -148,6 +166,7 @@ class UserResource extends Resource
                 //     ->getStateUsing(fn(User $record) => $record->roles->pluck('name')->join(', ')), // Fetch roles and join them as a string
 
             ])
+            ->defaultSort('id', 'desc')
             ->filters([
                 // Tables\Filters\TrashedFilter::make(),
             ])
@@ -182,12 +201,15 @@ class UserResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListUsers::route('/'),
-            'create' => Pages\CreateUser::route('/create'),
-            'edit' => Pages\EditUser::route('/{record}/edit'),
+            'index' => Pages\ListCustomers::route('/'),
+            'create' => Pages\CreateCustomer::route('/create'),
+            'edit' => Pages\EditCustomer::route('/{record}/edit'),
         ];
     }
-
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
     public static function getGloballySearchableAttributes(): array
     {
         return ['name', 'email'];

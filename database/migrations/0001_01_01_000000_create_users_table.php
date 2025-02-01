@@ -26,23 +26,19 @@ return new class extends Migration
             $table->string('name');
         });
 
-
-
         Schema::create('categories', function (Blueprint $table) {
             $table->id();
             $table->string('name');
             $table->text('description')->nullable();
-            $table->timestamps();
-            $table->softDeletes();
+            $table->text('image')->nullable();
         });
-        // Roles Table
-        // Schema::create('roles', function (Blueprint $table) {
-        //     $table->id();
-        //     $table->string('name')->unique();
-        //     $table->text('description')->nullable();  
-        //     $table->timestamps();
-        // });
-
+        Schema::create('sub_categories', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('category_id')->constrained('categories');
+            $table->string('name');
+            $table->text('description')->nullable();
+            $table->text('image')->nullable();
+        });
 
         // Users table
         Schema::create('users', function (Blueprint $table) {
@@ -55,17 +51,40 @@ return new class extends Migration
             $table->boolean('new_supplier_request')->default(true);
             $table->foreignId('current_team_id')->nullable();
             $table->string('profile_photo_path', 2048)->nullable();
-            $table->foreignId('city_id')->nullable()->constrained('cities');
-            $table->text('address')->nullable();
-
-            $table->string('contact_number')->nullable();
-            $table->string('whatsapp_number')->nullable();
             $table->string('referral_code')->nullable()->unique();
             $table->decimal('balance', 10, 2)->default(0.00);
+            $table->string('address')->nullable();
+            $table->string('phone')->nullable();
+            $table->string('whatsapp')->nullable();
+            $table->string('street')->nullable();
+            $table->string('zip')->nullable();
+            $table->string('country_id')->nullable()->constrained('countries');
+            $table->string('city_id')->nullable()->constrained('cities');
+            $table->string('state_id')->nullable()->constrained('states');
             $table->rememberToken();
             $table->softDeletes();
             $table->timestamps();
             $table->index(['email', 'id']);
+        });
+
+
+
+
+        // address Table 
+        Schema::create('addresses', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->constrained('users');
+            $table->string('address');
+            $table->string('name');
+            $table->string('email');
+            $table->string('phone')->nullable();
+            $table->string('whatsapp')->nullable();
+            $table->string('street')->nullable();
+            $table->string('zip')->nullable();
+            $table->string('country_id')->constrained('countries');
+            $table->string('city_id')->constrained('cities');
+            $table->string('state_id')->constrained('states');;
+            $table->timestamps();
         });
 
         Schema::create('supplier_details', function (Blueprint $table) {
@@ -75,8 +94,8 @@ return new class extends Migration
             $table->string('contact_person')->nullable();
             $table->string('website')->nullable();
             $table->string('supplier_type')->nullable();
-            $table->foreignId('main_category_id')->nullable()->constrained('categories');
-            $table->foreignId('secondary_category_id')->nullable()->constrained('categories');
+            $table->foreignId('category_id')->nullable()->constrained('categories');
+            $table->foreignId('sub_category_id')->nullable()->constrained('sub_categories');
             $table->integer('product_available')->default(0);
             $table->string('product_source')->nullable();
             $table->string('product_unit_quality')->nullable();
@@ -97,6 +116,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('supplier_user_id')->constrained('users');
             $table->foreignId('category_id')->constrained('categories');
+            $table->foreignId('sub_category_id')->constrained('sub_categories');
             $table->string('name');
             $table->text('description')->nullable();
             $table->decimal('referral_reward_value', 10, 2)->nullable()->default(0);
@@ -109,60 +129,43 @@ return new class extends Migration
             $table->timestamps();
             $table->index(['id']);
         });
-        Schema::create('inventory_movements', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('supplier_user_id')->constrained('users');
-            $table->foreignId('product_id')->constrained('products');
-            $table->enum('type', ['addition', 'deduction']); // Record whether stock is added or sold
-            $table->integer('quantity');
-            $table->decimal('unit_cost_price', 10, 2);
-            $table->string('description');
-            $table->timestamps();
-        });
-        Schema::create('addresses', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained('users');
-            $table->string('name');
-            $table->string('email');
-            $table->string('country_id')->constrained('countries');
-            $table->string('city_id')->constrained('cities');
-            $table->string('state_id')->constrained('states');;
-            $table->string('phone')->nullable();
-            $table->string('street')->nullable();
-            $table->string('zip')->nullable();
-            $table->timestamps();
-        });
+
         // Orders table
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
             $table->string('warehouse_number');
+            $table->foreignId('customer_user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('recipient_id')->constrained('addresses');
             $table->foreignId('sender_id')->constrained('addresses');
-            $table->foreignId('customer_user_id')->constrained('users')->onDelete('cascade');
             $table->decimal('total_price', 10, 2);
-            $table->enum('status', ['pending', 'confirmed', 'paid', 'refund', 'shipped', 'delivered', 'canceled'])->default('pending');
-            //order status handle by admin. admin will handle the order because the order belong to many suppliers through thier products.
+            $table->enum('status', ['pending', 'confirmed', 'paid', 'refunded', 'shipped', 'delivered', 'canceled'])->default('pending');
             $table->timestamps();
             $table->softDeletes();
             $table->index(['id']);
         });
+
         Schema::create('order_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('order_id')->constrained('orders'); // 1
             $table->foreignId('product_id')->constrained('products'); //a,b 
             $table->foreignId('supplier_user_id')->constrained('users'); //for searching purpose the get saled items directly not through products and order.for future use.
-            $table->integer('quantity'); //1
-            $table->decimal('profit', 10, 2); // ( unit_selling_price  - unit_cost_price ) * quantity
-            $table->decimal('price', 10, 2); //quantity * unit selling price 200
-            $table->decimal('unit_cost_price', 10, 2); // 90 
+            $table->integer('quantity'); //1 
+            $table->decimal('price', 10, 2);
             $table->enum('status', ['pending', 'confirmed', 'canceled'])->default('pending');
-            //item status handle by supplier as the item belong to supplier.
-            $table->decimal('unit_selling_price', 10, 2); //100
-
-
-            //To dedect profit made by suppliers.supplier cant updte this value need to create another product if selling value is different
         });
-
+        // Inventory Movements table
+        Schema::create('inventory_movements', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('supplier_user_id')->constrained('users');
+            $table->foreignId('product_id')->constrained('products');
+            $table->foreignId('order_item_id')->nullable()->constrained('order_items');
+            $table->enum('type', ['addition', 'deduction']); // Record whether stock is added or sold
+            $table->integer('quantity');
+            $table->decimal('unit_price', 10, 2);
+            $table->decimal('total_price', 10, 2);
+            $table->string('description');
+            $table->timestamps();
+        });
 
         // Referrals table
         Schema::create('referrals', function (Blueprint $table) {
@@ -238,13 +241,14 @@ return new class extends Migration
         Schema::dropIfExists('referrals');
         Schema::dropIfExists('order_items');
         Schema::dropIfExists('inventory_movements');
-        Schema::dropIfExists('orders'); 
+        Schema::dropIfExists('orders');
         Schema::dropIfExists('addresses');
         Schema::dropIfExists('products');
         Schema::dropIfExists('supplier_details');
         Schema::dropIfExists('user_profiles');
         Schema::dropIfExists('users');
         Schema::dropIfExists('roles');
+        Schema::dropIfExists('sub_categories');
         Schema::dropIfExists('categories');
         Schema::dropIfExists('cities');
         Schema::dropIfExists('states');

@@ -9,10 +9,13 @@ use Illuminate\Support\Facades\Log;
 class InventoryMovement extends Model
 {
     use HasFactory;
-    protected $fillable = ['type', 'stock_quantity', 'product_id', 'type', 'stock_quantity', 'unit_cost_price'];
+    protected $fillable = ['type', 'stock_quantity', 'product_id', 'type', 'stock_quantity', 'price'];
     function product()
     {
         return $this->belongsTo(Product::class);
+    }
+    function orderItem(){
+        return $this->belongsTo(OrderItem::class);
     }
     function supplierUser()
     {

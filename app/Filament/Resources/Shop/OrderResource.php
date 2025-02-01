@@ -2,27 +2,25 @@
 
 namespace App\Filament\Resources\Shop;
 
-use App\Enums\OrderStatus;
-use App\Filament\Resources\ProductResource;
 use App\Filament\Resources\Shop\OrderResource\Pages;
-use App\Filament\Resources\Shop\OrderResource\RelationManagers;
-use App\Filament\Resources\Shop\OrderResource\Widgets\OrderStats;
-use App\Forms\Components\AddressForm;
-use App\Models\Order;
-use App\Models\Product;
-use Filament\Forms;
-use Filament\Forms\Components\Actions\Action;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Form;
-use Filament\Notifications\Notification;
-use Filament\Resources\Resource;
-use Filament\Tables;
-use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Database\Eloquent\Builder;
+use Filament\Notifications\Notification;
+use Illuminate\Database\Eloquent\Model;
+use Filament\Forms\Components\TextArea;
+use Filament\Tables\Actions\Action;
+use Filament\Resources\Resource;
 use Illuminate\Support\Carbon;
-use Squire\Models\Currency;
+use Filament\Tables\Table;
+use Filament\Forms\Form;
+use App\Models\Order;
+use Filament\Tables;
+use Filament\Forms;
+use App\Models\Product;
+use App\Models\OrderItem;
+use App\Models\Address;
+use Filament\Forms\Components\{Wizard, Wizard\Step, Select, TextInput, Repeater, Grid, Section};
+use Filament\Resources\Pages\CreateRecord;
 
 class OrderResource extends Resource
 {
@@ -37,49 +35,88 @@ class OrderResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-shopping-bag';
 
     protected static ?int $navigationSort = 1;
-    public static function canCreate(): bool
-    {
-        return false;
-    }
-    public static function form(Form $form): Form
+
+
+    public static function form(Forms\Form $form): Forms\Form
     {
         return $form
             ->schema([
-                Forms\Components\Group::make()
-                    ->schema([
-                        Forms\Components\Section::make()
-                            ->schema(static::getDetailsFormSchema())
-                            ->columns(2),
+                Wizard::make([
+                    // Step 1: Order Item Details
+                    Step::make('Order Items')
+                        ->schema([
+                            Select::make('customer_user_id')
+                                ->label('Select Customer')
+                                ->relationship('customer', 'name')
+                                ->required(),
 
-                        Forms\Components\Section::make('Order items')
-                            ->headerActions([
-                                Action::make('reset')
-                                    ->modalHeading('Are you sure?')
-                                    ->modalDescription('All existing items will be removed from the order.')
-                                    ->requiresConfirmation()
-                                    ->color('danger')
-                                    ->action(fn(Forms\Set $set) => $set('items', [])),
-                            ])
-                            ->schema([
-                                static::getItemsRepeater(),
-                            ]),
-                    ])
-                    ->columnSpan(['lg' => fn(?Order $record) => $record === null ? 3 : 2]),
+                            Repeater::make('order_items')
+                                ->relationship()
+                                ->schema([
+                                    Select::make('product_id')
+                                        ->label('Product')
+                                        ->relationship('product', 'name')
+                                        ->searchable()
+                                        ->required(),
 
-                Forms\Components\Section::make()
-                    ->schema([
-                        Forms\Components\Placeholder::make('created_at')
-                            ->label('Created at')
-                            ->content(fn(Order $record): ?string => $record->created_at?->diffForHumans()),
-                        Forms\Components\Placeholder::make('updated_at')
-                            ->label('Last modified at')
-                            ->content(fn(Order $record): ?string => $record->updated_at?->diffForHumans()),
-                    ])
-                    ->columnSpan(['lg' => 1])
-                    ->hidden(fn(?Order $record) => $record === null),
-            ])
-            ->columns(3);
+                                    TextInput::make('quantity')
+                                        ->label('Quantity')
+                                        ->numeric()
+                                        ->default(1)
+                                        ->required(),
+
+                                    TextInput::make('price')
+                                        ->label('Price')
+                                        ->numeric()
+                                        ->default(0.00)
+                                        ->required(),
+                                ])
+                                ->columns(3)
+                                ->createItemButtonLabel('Add Product'),
+                        ]),
+
+                    // Step 2: Sender Details
+                    Step::make('Sender Details')
+                        ->schema([
+                            Select::make('sender_id')
+                                ->label('Select Sender Address')
+                                ->relationship('sender', 'address')
+                                ->searchable()
+                                ->required(),
+                        ]),
+
+                    // Step 3: Recipient Details
+                    Step::make('Recipient Details')
+                        ->schema([
+                            Select::make('recipient_id')
+                                ->label('Select Recipient Address')
+                                ->relationship('recipient', 'address')
+                                ->searchable()
+                                ->required(),
+
+                            TextInput::make('total_price')
+                                ->label('Total Price')
+                                ->numeric()
+                                ->default(0.00)
+                                ->required(),
+                        ]),
+                ])
+                    ->skippable(),
+            ]);
     }
+
+    public static function getDetailsFormSchema(): array
+    {
+        return [
+            TextInput::make('warehouse_number')->label('Warehouse Number')->required(),
+            Select::make('customer_user_id')
+                ->label('Customer')
+                ->relationship('customer', 'name')
+                ->required(),
+            // Add other form components as needed...
+        ];
+    }
+
 
     public static function table(Table $table): Table
     {
@@ -89,6 +126,15 @@ class OrderResource extends Resource
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('customerUser.name')
+                    ->label('Customer')
+                    ->searchable()
+                    ->sortable()
+                    ->toggleable(),
+                Tables\Columns\TextColumn::make('recipient.name')
+                    ->searchable()
+                    ->sortable()
+                    ->toggleable(),
+                Tables\Columns\TextColumn::make('sender.name')
                     ->searchable()
                     ->sortable()
                     ->toggleable(),
@@ -151,7 +197,21 @@ class OrderResource extends Resource
                     }),
             ])
             ->actions([
-                // Tables\Actions\EditAction::make(),
+
+                Action::make('view')
+                    ->label('View Details')
+                    ->icon('heroicon-o-eye')
+                    ->color('primary')
+                    ->modalHeading('Order Details')
+                    ->modalContent(function ($record) {
+                        return view('admin.orders.details', [
+                            'order' => $record,
+                            'items' => $record->items,
+                            'sender' => $record->sender,
+                            'recipient' => $record->recipient
+                        ]);
+                    })
+                    ->action(fn() => Notification::make()->title('Details shown')->success()->send()),
             ])
             ->groupedBulkActions([
                 Tables\Actions\DeleteBulkAction::make()
@@ -188,8 +248,8 @@ class OrderResource extends Resource
     {
         return [
             'index' => Pages\ListOrders::route('/'),
-            // 'create' => Pages\CreateOrder::route('/create'),
-            // 'edit' => Pages\EditOrder::route('/{record}/edit'),
+            'create' => Pages\CreateOrder::route('/create'),
+            'edit' => Pages\EditOrder::route('/{record}/edit'),
         ];
     }
 
@@ -226,101 +286,4 @@ class OrderResource extends Resource
 
         return (string) $modelClass::count();
     }
-
-    /** @return Forms\Components\Component[] */
-    // public static function getDetailsFormSchema(): array
-    // {
-    //     return [
-    //         Forms\Components\TextInput::make('warehouse_number')
-    //             ->default('OR-' . random_int(100000, 999999))
-    //             ->disabled()
-    //             ->dehydrated()
-    //             ->required()
-    //             ->maxLength(32)
-    //             ->unique(Order::class, 'number', ignoreRecord: true),
-
-    //         Forms\Components\Select::make('customer_user_id')
-    //             ->relationship('customerUser', 'name')
-    //             ->searchable()
-    //             ->required()
-    //             ->createOptionAction(function (Action $action) {
-    //                 return $action
-    //                     ->modalHeading('Create customer')
-    //                     ->modalSubmitActionLabel('Create customer')
-    //                     ->modalWidth('lg');
-    //             }),
-
-    //         Forms\Components\ToggleButtons::make('status')
-    //             ->inline()
-    //             ->required(),
-
-
-
-    //         Forms\Components\MarkdownEditor::make('notes')
-    //             ->columnSpan('full'),
-    //     ];
-    // }
-
-    // public static function getItemsRepeater(): Repeater
-    // {
-    //     return Repeater::make('items')
-    //         ->relationship()
-    //         ->schema([
-    //             Forms\Components\Select::make('shop_product_id')
-    //                 ->label('Product')
-    //                 ->options(Product::query()->pluck('name', 'id'))
-    //                 ->required()
-    //                 ->reactive()
-    //                 ->afterStateUpdated(fn($state, Forms\Set $set) => $set('unit_price', Product::find($state)?->price ?? 0))
-    //                 ->distinct()
-    //                 ->disableOptionsWhenSelectedInSiblingRepeaterItems()
-    //                 ->columnSpan([
-    //                     'md' => 5,
-    //                 ])
-    //                 ->searchable(),
-
-    //             Forms\Components\TextInput::make('qty')
-    //                 ->label('Quantity')
-    //                 ->numeric()
-    //                 ->default(1)
-    //                 ->columnSpan([
-    //                     'md' => 2,
-    //                 ])
-    //                 ->required(),
-
-    //             Forms\Components\TextInput::make('unit_price')
-    //                 ->label('Unit Price')
-    //                 ->disabled()
-    //                 ->dehydrated()
-    //                 ->numeric()
-    //                 ->required()
-    //                 ->columnSpan([
-    //                     'md' => 3,
-    //                 ]),
-    //         ])
-    //         ->extraItemActions([
-    //             // Action::make('openProduct')
-    //             //     ->tooltip('Open product')
-    //             //     ->icon('heroicon-m-arrow-top-right-on-square')
-    //             //     ->url(function (array $arguments, Repeater $component): ?string {
-    //             //         $itemData = $component->getRawItemState($arguments['item']);
-
-    //             //         $product = Product::find($itemData['shop_product_id']);
-
-    //             //         if (! $product) {
-    //             //             return null;
-    //             //         }
-
-    //             //         return ProductResource::getUrl('edit', ['record' => $product]);
-    //             //     }, shouldOpenInNewTab: true)
-    //             //     ->hidden(fn (array $arguments, Repeater $component): bool => blank($component->getRawItemState($arguments['item'])['shop_product_id'])),
-    //         ])
-    //         ->orderColumn('sort')
-    //         ->defaultItems(1)
-    //         ->hiddenLabel()
-    //         ->columns([
-    //             'md' => 10,
-    //         ])
-    //         ->required();
-    // }
 }

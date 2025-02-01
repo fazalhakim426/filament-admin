@@ -24,7 +24,7 @@ class InventoryMovementRequest extends FormRequest
         return [
             'product_id' => 'required|exists:products,id',
             'quantity' => 'required|integer|min:1',
-            'unit_cost_price' => 'required|numeric|min:0',
+            'unit_price' => 'required|numeric|min:0',
             'description' => 'required|string|max:255',
             'type' => 'required|in:addition,deduction',
         ];

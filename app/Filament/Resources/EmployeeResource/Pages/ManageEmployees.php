@@ -1,22 +1,28 @@
 <?php
-namespace App\Filament\Resources\UserResource\Pages;
+
+namespace App\Filament\Resources\EmployeeResource\Pages;
+use App\Filament\Resources\EmployeeResource;
 use Filament\Resources\Pages\ManageRecords;
 use Illuminate\Database\Eloquent\Builder;
-use App\Filament\Resources\UserResource;
 use Filament\Resources\Components\Tab;
+use App\Events\UserCreated;
+use Illuminate\Support\Str;
 use Filament\Actions;
-
-class ManageUsers extends ManageRecords
+class ManageEmployees extends ManageRecords
 {
-    protected static string $resource = UserResource::class;
+    protected static string $resource = EmployeeResource::class;
 
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()
+                ->after(function ($record) {
+                    $record->assignRole('employee'); 
+                    // event(new UserCreated($record, Str::random(8)));  
+                }),
         ];
     }
-  
+
     public function getTabs(): array
     {
         return [

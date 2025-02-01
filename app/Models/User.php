@@ -5,14 +5,17 @@ namespace App\Models;
 use Althinect\FilamentSpatieRolesPermissions\Concerns\HasSuperAdmin;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasManyThrough;
-use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Support\Facades\Hash;
 use App\Models\Deposit;
+use App\Models\State;
+use App\Models\City;
+use App\Models\Country;
+
+use Illuminate\Support\Str;
 
 class User extends Authenticatable
 {
@@ -79,10 +82,18 @@ class User extends Authenticatable
         return $this->hasManyThrough(Order::class, OrderItem::class, 'supplier_user_id', 'id', 'id', 'order_id')
             ->distinct(); // Using distinct to ensure unique orders are returned
     }
-    
+
     function city()
     {
         return $this->belongsTo(City::class);
+    }
+    function state()
+    {
+        return $this->belongsTo(State::class);
+    }
+    function country()
+    {
+        return $this->belongsTo(Country::class);
     }
     public function addresses()
     {
@@ -109,6 +120,7 @@ class User extends Authenticatable
 
         static::creating(function ($user) {
             $user->password = Hash::make('password');
+            $user->referral_code = Str::upper(Str::random(8));
         });
     }
 }
