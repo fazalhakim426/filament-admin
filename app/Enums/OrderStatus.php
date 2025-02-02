@@ -9,23 +9,25 @@ use Filament\Support\Contracts\HasLabel;
 enum OrderStatus: string implements HasColor, HasIcon, HasLabel
 {
     case New = 'new';
-
     case Processing = 'processing';
-
+    case Confirmed = 'confirmed';
+    case Paid = 'paid';
+    case Refunded = 'refunded';
     case Shipped = 'shipped';
-
     case Delivered = 'delivered';
-
-    case Cancelled = 'cancelled';
+    case Canceled = 'canceled';
 
     public function getLabel(): string
     {
         return match ($this) {
             self::New => 'New',
             self::Processing => 'Processing',
+            self::Confirmed => 'confirmed',
+            self::Paid => 'paid',
+            self::Refunded => 'Refunded',
             self::Shipped => 'Shipped',
             self::Delivered => 'Delivered',
-            self::Cancelled => 'Cancelled',
+            self::Canceled => 'Canceled',
         };
     }
 
@@ -34,8 +36,8 @@ enum OrderStatus: string implements HasColor, HasIcon, HasLabel
         return match ($this) {
             self::New => 'info',
             self::Processing => 'warning',
-            self::Shipped, self::Delivered => 'success',
-            self::Cancelled => 'danger',
+            self::Shipped, self::Delivered, self::Confirmed, self::Paid => 'success',
+            self::Canceled, self::Refunded => 'danger',
         };
     }
 
@@ -45,8 +47,8 @@ enum OrderStatus: string implements HasColor, HasIcon, HasLabel
             self::New => 'heroicon-m-sparkles',
             self::Processing => 'heroicon-m-arrow-path',
             self::Shipped => 'heroicon-m-truck',
-            self::Delivered => 'heroicon-m-check-badge',
-            self::Cancelled => 'heroicon-m-x-circle',
+            self::Delivered, self::Delivered, self::Confirmed, self::Paid => 'heroicon-m-check-badge',
+            self::Canceled, self::Refunded => 'heroicon-m-x-circle',
         };
     }
 }

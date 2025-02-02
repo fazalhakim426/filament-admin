@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\Shop\OrderResource\Widgets;
 
 use App\Filament\Resources\Shop\OrderResource\Pages\ListOrders;
-use App\Models\Shop\Order;
+use App\Models\Order;
 use Filament\Widgets\Concerns\InteractsWithPageTable;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
@@ -35,10 +35,10 @@ class OrderStats extends BaseWidget
             Stat::make('Orders', $this->getPageTableQuery()->count())
                 ->chart(
                     $orderData
-                        ->map(fn (TrendValue $value) => $value->aggregate)
+                        ->map(fn(TrendValue $value) => $value->aggregate)
                         ->toArray()
                 ),
-            Stat::make('Open orders', $this->getPageTableQuery()->whereIn('status', ['open', 'processing'])->count()),
+            Stat::make('Open orders', $this->getPageTableQuery()->whereIn('status', ['new', 'processing'])->count()),
             Stat::make('Average price', number_format($this->getPageTableQuery()->avg('total_price'), 2)),
         ];
     }

@@ -33,24 +33,28 @@ class CreateOrder extends CreateRecord
             ])
             ->columns(null);
     }
-
+    // protected function mutateFormDataBeforeCreate(array $data): array
+    // {
+    //     // dd($data); // Debugging
+    //     // return $data;
+    // }
     protected function afterCreate(): void
     {
         /** @var Order $order */
-        $order = $this->record;
+        // $order = $this->record;
 
-        /** @var User $user */
-        $user = auth()->user();
+        // /** @var User $user */
+        // $user = auth()->user();
 
-        Notification::make()
-            ->title('New order')
-            ->icon('heroicon-o-shopping-bag')
-            ->body("**{$order->customer?->name} ordered {$order->items->count()} products.**")
-            ->actions([
-                Action::make('View')
-                    ->url(OrderResource::getUrl('edit', ['record' => $order])),
-            ])
-            ->sendToDatabase($user);
+        // Notification::make()
+        //     ->title('New order')
+        //     ->icon('heroicon-o-shopping-bag')
+        //     ->body("**{$order->customer?->name} ordered {$order->items->count()} products.**")
+        //     ->actions([
+        //         Action::make('View')
+        //             ->url(OrderResource::getUrl('edit', ['record' => $order])),
+        //     ])
+        //     ->sendToDatabase($user);
     }
 
     /** @return Step[] */

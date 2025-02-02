@@ -137,18 +137,17 @@ return new class extends Migration
             $table->foreignId('customer_user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('recipient_id')->constrained('addresses');
             $table->foreignId('sender_id')->constrained('addresses');
-            $table->decimal('total_price', 10, 2);
-            $table->enum('status', ['pending', 'confirmed', 'paid', 'refunded', 'shipped', 'delivered', 'canceled'])->default('pending');
-            $table->timestamps();
+            $table->decimal('total_price', 10, 2)->nullable();
+            $table->string('status')->default('new'); //['new', 'processing','confirmed', 'paid', 'refunded', 'shipped', 'delivered', 'canceled']
             $table->softDeletes();
-            $table->index(['id']);
+            $table->timestamps(); 
         });
 
         Schema::create('order_items', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('supplier_user_id')->constrained('users'); //for searching purpose the get saled items directly not through products and order.for future use.
             $table->foreignId('order_id')->constrained('orders'); // 1
             $table->foreignId('product_id')->constrained('products'); //a,b 
-            $table->foreignId('supplier_user_id')->constrained('users'); //for searching purpose the get saled items directly not through products and order.for future use.
             $table->integer('quantity'); //1 
             $table->decimal('price', 10, 2);
             $table->enum('status', ['pending', 'confirmed', 'canceled'])->default('pending');
@@ -239,8 +238,8 @@ return new class extends Migration
         Schema::dropIfExists('notifications');
         Schema::dropIfExists('deposits');
         Schema::dropIfExists('referrals');
-        Schema::dropIfExists('order_items');
         Schema::dropIfExists('inventory_movements');
+        Schema::dropIfExists('order_items');
         Schema::dropIfExists('orders');
         Schema::dropIfExists('addresses');
         Schema::dropIfExists('products');

@@ -20,8 +20,8 @@ class CreateSupplier extends CreateRecord
     { 
         $supplierUser = $this->record;
         $supplierUser->assignRole('supplier');
-        $password =   Hash::make('password');
-        $supplierUser->password = $password;
+        $password= Str::random(5); 
+        $supplierUser->password = Hash::make($password);
         event(new UserCreated($supplierUser,$password));
         
     }

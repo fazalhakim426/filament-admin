@@ -33,7 +33,7 @@ class LatestOrders extends BaseWidget
                     ->sortable(),
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
-                    ->color(fn($record) => $record->status === 'pending' ? 'gray' : ($record->status === 'confirmed' ? 'primary' : ($record->status === 'shipped' ? 'success' : ($record->status === 'delivered' ? 'success' : ($record->status === 'canceled' ? 'danger' : 'gray'))))),
+                    ->color(fn($record) => $record->status === 'pending' ? 'gray' : ($record->status === 'confirmed' ? 'primary' : ($record->status === 'shipped' ? 'success' : ($record->status === 'delivered' ? 'success' : ($record->status === 'canceled'||$record->status === 'refunded' ? 'danger' : 'gray'))))),
                 Tables\Columns\TextColumn::make('total_price')
                     ->label('Cost')
                     ->prefix('RS')
