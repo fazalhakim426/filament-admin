@@ -8,10 +8,12 @@ use App\Filament\Resources\Shop\OrderResource\Pages;
 use App\Filament\Resources\Shop\OrderResource\RelationManagers;
 use App\Filament\Resources\Shop\OrderResource\Widgets\OrderStats;
 use App\Forms\Components\AddressForm;
+use App\Models\Deposit;
 use App\Models\Order;
 use App\Models\Product;
+
+use Filament\Tables\Actions\Action;
 use Filament\Forms;
-use Filament\Forms\Components\Actions\Action;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
@@ -156,6 +158,44 @@ class OrderResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Action::make('Pay')
+                    ->modalHeading('Make a Payment')
+                    ->modalButton('Pay Now')
+                    ->icon('heroicon-o-currency-dollar')
+                    ->form([
+                        Forms\Components\TextInput::make('amount')
+                            ->label('Amount to Pay')
+                            ->numeric()
+                            ->default(fn(Order $record) => $record->need_to_pay) // Prefill with need_to_pay
+                            ->required(),
+                        Forms\Components\Select::make('provider')
+                            ->options([
+                                'bank_transfer' => 'Bank Transfer',
+                                'credit_card' => 'Credit Card',
+                                'cash' => 'Cash',
+                                'account' => 'account',
+                            ])
+                            ->label('Payment Method')
+                            ->required(),
+                        Forms\Components\Textarea::make('description')->label('Description'),
+                    ])
+                    ->action(fn(array $data, Order $record) => self::handlePayment($record, $data['amount'], $data['provider'], $data['description']))
+                    ->visible(fn(Order $record) => $record->need_to_pay > 0),
+
+                Action::make('Refund')
+                    ->modalHeading('Refund Payment')
+                    ->modalButton('Refund Now')
+                    ->icon('heroicon-o-arrow-uturn-left')
+                    ->form([
+                        Forms\Components\TextInput::make('amount')
+                            ->label('Amount to Refund')
+                            ->numeric()
+                            ->required(),
+                        Forms\Components\Textarea::make('description')->label('Reason for Refund'),
+                    ])
+                    ->action(fn(array $data, Order $record) => self::handleRefund($record, $data['amount'], $data['description']))
+                    ->visible(fn(Order $record) => $record->paid > 0),
+
             ])
             ->groupedBulkActions([
                 Tables\Actions\DeleteBulkAction::make()
@@ -392,5 +432,34 @@ class OrderResource extends Resource
                 'md' => 10,
             ])
             ->required();
+    }
+    protected static function handlePayment(Order $order, $amount, $provider, $description = null)
+    {
+        Deposit::create([
+            'transaction_reference' => 'TXN-' . time(),
+            'user_id' => $order->user_id,
+            'order_id' => $order->id,
+            'amount' => $amount,
+            'transaction_type' => 'credit',
+            'deposit_type' => 'order_payment',
+            'currency' => 'PKR',
+            'provider' => $provider,
+            'balance' => 0,
+            'description' => $description,
+        ]);
+    }
+
+    protected static function handleRefund(Order $order, $amount, $description = null)
+    {
+        Deposit::create([
+            'transaction_reference' => 'TXN-' . time(),
+            'user_id' => $order->user_id,
+            'order_id' => $order->id,
+            'amount' => $amount,
+            'transaction_type' => 'debit', // Debit means refunded
+            'deposit_type' => 'order_refund',
+            'currency' => 'PKR', 
+            'description' => $description,
+        ]);
     }
 }

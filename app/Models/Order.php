@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
 
@@ -76,4 +77,29 @@ class Order extends Model
     {
         return $this->items()->sum(DB::raw('price * quantity'));
     }
+
+   
+    public function deposits(): HasMany
+    {
+        return $this->hasMany(Deposit::class);
+    }
+
+    public function getPaidAttribute()
+    {
+        return $this->deposits()
+            ->where('transaction_type', 'credit')
+            ->sum('amount');
+    }
+
+    public function getRefundedAttribute()
+    {
+        return $this->deposits()
+            ->where('transaction_type', 'debit')
+            ->sum('amount');
+    }
+
+    public function getNeedToPayAttribute()
+    {
+        return ($this->total_price + $this->refunded) - $this->paid;
+    } 
 }
