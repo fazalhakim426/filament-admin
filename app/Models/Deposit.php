@@ -48,7 +48,6 @@ class Deposit extends Model
             $deposit->update(['balance' => $deposit->user->balance + $adjustment]);
             $deposit->user->update(['balance' => $deposit->user->balance + $adjustment]);
         });
-
         static::deleted(function ($deposit) {
             $adjustment = $deposit->transaction_type == 'credit' ? $deposit->amount : -$deposit->amount;
             $adjustment = $adjustment * -1;
