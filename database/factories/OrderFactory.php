@@ -36,7 +36,11 @@ class OrderFactory extends Factory
                     'quantity' => $this->faker->numberBetween(1, 5),
                     'price' => $product->selling_price,
                 ]);
+
             }
+            $order->updateQuietly([
+                'total_price' => $order->calculateTotalPrice(),
+            ]);
         });
     }
 }

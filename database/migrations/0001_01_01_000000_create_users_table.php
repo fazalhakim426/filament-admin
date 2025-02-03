@@ -89,7 +89,7 @@ return new class extends Migration
 
         Schema::create('supplier_details', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('user_id')->constrained('users');
             $table->string('business_name');
             $table->string('contact_person')->nullable();
             $table->string('website')->nullable();
@@ -134,7 +134,7 @@ return new class extends Migration
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
             $table->string('warehouse_number');
-            $table->foreignId('customer_user_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('customer_user_id')->constrained('users');
             $table->foreignId('recipient_id')->constrained('addresses');
             $table->foreignId('sender_id')->constrained('addresses');
             $table->decimal('total_price', 10, 2)->nullable();
@@ -169,9 +169,9 @@ return new class extends Migration
         // Referrals table
         Schema::create('referrals', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('supplier_user_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('reseller_user_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('order_item_id')->constrained('order_items')->onDelete('cascade');
+            $table->foreignId('supplier_user_id')->constrained('users');
+            $table->foreignId('reseller_user_id')->constrained('users');
+            $table->foreignId('order_item_id')->constrained('order_items');
             $table->boolean('reward_released')->default(false);
             $table->decimal('reward_amount', 10, 2)->default(0.00); // 100
             $table->string('referral_code')->nullable();
@@ -182,9 +182,9 @@ return new class extends Migration
         Schema::create('deposits', function (Blueprint $table) {
             $table->id();
             $table->string('transaction_reference')->nullable();
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade'); //deposit own by. 
-            $table->foreignId('order_id')->nullable()->constrained('orders')->onDelete('cascade');
-            $table->foreignId('referral_id')->nullable()->constrained('referrals')->onDelete('cascade'); //deposit made to supplier. will null for other transactions.
+            $table->foreignId('user_id')->constrained('users'); //deposit own by. 
+            $table->foreignId('order_id')->nullable()->constrained('orders');
+            $table->foreignId('referral_id')->nullable()->constrained('referrals'); //deposit made to supplier. will null for other transactions.
             $table->decimal('amount', 10, 2);
             $table->enum('transaction_type', ['debit', 'credit']);
             $table->string('deposit_type');
@@ -199,7 +199,7 @@ return new class extends Migration
         // Notifications table
         Schema::create('notifications', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('user_id')->constrained('users');
             $table->string('title');
             $table->text('message');
             $table->boolean('is_read')->default(false);

@@ -2,28 +2,24 @@
 
 namespace App\Filament\Resources\Shop;
 
+use App\Filament\Resources\Shop\OrderResource\Pages; 
+use App\Filament\Resources\Shop\OrderResource\Widgets\OrderStats; 
+use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Notifications\Notification;
+use Filament\Forms\Components\Repeater; 
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Filament\Tables\Actions\Action; 
+use Filament\Resources\Resource;
 use App\Enums\OrderStatus; 
-use App\Filament\Resources\Shop\OrderResource\Pages;
-use App\Filament\Resources\Shop\OrderResource\RelationManagers;
-use App\Filament\Resources\Shop\OrderResource\Widgets\OrderStats;
-use App\Forms\Components\AddressForm;
 use App\Models\Deposit;
 use App\Models\Order;
 use App\Models\Product;
-
-use Filament\Tables\Actions\Action;
 use Filament\Forms;
-use Filament\Forms\Components\Repeater; 
 use Filament\Forms\Form;
-use Filament\Notifications\Notification;
-use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Illuminate\Support\Carbon;
-use Squire\Models\Currency; 
+use Illuminate\Support\Carbon; 
 use Filament\Forms\Components\Placeholder; 
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
@@ -52,7 +48,7 @@ class OrderResource extends Resource
                             ->columns(2),
                         Forms\Components\Section::make('Order items')
                             ->headerActions([
-                                Action::make('reset')
+                                \Filament\Forms\Components\Actions\Action::make('reset')
                                     ->modalHeading('Are you sure?')
                                     ->modalDescription('All existing items will be removed from the order.')
                                     ->requiresConfirmation()
@@ -106,13 +102,8 @@ class OrderResource extends Resource
                 //     ->sortable()
                 //     ->toggleable(),
                 Tables\Columns\TextColumn::make('total_price')
-                    ->money('PKR')
-                    ->searchable()
-                    ->sortable()
-                    ->summarize([
-                        Tables\Columns\Summarizers\Sum::make()
-                            ->money(),
-                    ]),
+                    ->money('PKR'),
+                    
                 Tables\Columns\TextColumn::make('total_price')
                     ->money('PKR')
                     ->label('Shipping Cost')
@@ -121,9 +112,10 @@ class OrderResource extends Resource
                     ->toggleable()
                     ->summarize([
                         Tables\Columns\Summarizers\Sum::make()
-                            ->money(),
+                            ->money('pkr'),
                     ]),
             ])
+            ->defaultSort('created_at','DESC')
             ->filters([
                 Tables\Filters\TrashedFilter::make(),
 
@@ -158,29 +150,7 @@ class OrderResource extends Resource
                     }),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                // Action::make('Pay')
-                //     ->modalHeading('Make a Payment')
-                //     ->modalButton('Pay Now')
-                //     ->icon('heroicon-o-currency-dollar')
-                //     ->form([
-                //         Forms\Components\TextInput::make('amount')
-                //             ->label('Amount to Pay')
-                //             ->numeric()
-
-                //             ->default(fn(Order $record) => $record->need_to_pay) // Prefill with need_to_pay
-                //             ->required(),
-                             
-                //         Forms\Components\Textarea::make('description')->label('Description'),
-                //     ])
-                //     ->action(fn(array $data, Order $record) => self::handlePayment($record, $data['amount'], $data['description']))
-                //     ->visible(fn(Order $record) => $record->need_to_pay > 0),
-
-
-
-
-
-                
+                Tables\Actions\EditAction::make(), 
                 Action::make('Pay')
                     ->modalHeading('Make a Payment')
                     ->modalButton('Pay Now')
@@ -189,21 +159,8 @@ class OrderResource extends Resource
                         // Show User Balance
                         Placeholder::make('balance')
                             ->label('User Balance')
-                            ->content(fn(Order $record) => 'PKR ' . number_format($record->user->balance ?? 0, 2)),
-                
-                        // Show Order Deposit History
-                        // Repeater::make('order_deposits')
-                        //     ->label('Order Deposit History')
-                        //     ->relationship('deposits') // Assuming an Order hasMany Deposits
-                        //     ->schema([
-                        //         Placeholder::make('transaction_reference')->label('Transaction Ref'),
-                        //         // Placeholder::make('amount')->label('Amount')->content(fn($record) => 'PKR ' . number_format($record->amount, 2)),
-                        //         Placeholder::make('transaction_type')->label('Type'),
-                        //         Placeholder::make('deposit_type')->label('Deposit Type'),
-                        //         Placeholder::make('description')->label('Description'),
-                        //         // Placeholder::make('created_at')->label('Date')->content(fn($record) => $record->created_at->format('Y-m-d H:i')),
-                        //     ])
-                        //     ->collapsed(),
+                            ->content(fn(Order $record) => 'PKR ' . number_format($record->customerUser->balance ?? 0, 2)),
+                 
                 
                         // Show Total Paid and Need to Pay
                         Placeholder::make('paid')
@@ -234,10 +191,9 @@ class OrderResource extends Resource
                     ->modalButton('Refund Now')
                     ->icon('heroicon-o-arrow-uturn-left')
                     ->form([
-                        
                         Placeholder::make('balance')
                         ->label('User Balance')
-                        ->content(fn(Order $record) => 'PKR ' . number_format($record->user->balance ?? 0, 2)),
+                        ->content(fn(Order $record) => 'PKR ' . number_format($record->customerUser->balance ?? 0, 2)),
                         // Show Total Paid and Need to Pay
                         Placeholder::make('paid')
                             ->label('Total Paid')

@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\Shop\OrderResource\Pages;
 
 use App\Filament\Resources\Shop\OrderResource;
-use App\Models\Shop\Order;
+use App\Models\Order;
 use App\Models\User;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Wizard;
@@ -33,16 +33,14 @@ class CreateOrder extends CreateRecord
             ])
             ->columns(null);
     }
-    // protected function mutateFormDataBeforeCreate(array $data): array
-    // {
-    //     // dd($data); // Debugging
-    //     // return $data;
-    // }
+     
     protected function afterCreate(): void
     {
-        /** @var Order $order */
-        // $order = $this->record;
-
+        /** @var Order $order */ 
+        $order = ($this->record);
+        $order->updateQuietly([
+            'total_price' => $order->calculateTotalPrice(),
+        ]);
         // /** @var User $user */
         // $user = auth()->user();
 

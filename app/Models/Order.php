@@ -49,15 +49,24 @@ class Order extends Model
         parent::boot();
         static::creating(function ($order) {
             $order->warehouse_number = self::generateWarehouseNumber();
-            $order->total_price =  $order->calculateTotalPrice();
         });
-        static::updated(function ($order) {
-            $order->total_price =  $order->calculateTotalPrice();
+    
+        static::created(function ($order) { 
+
+            $order->updateQuietly([
+                'total_price' => $order->calculateTotalPrice(),
+            ]);
+        });
+    
+        static::updated(function ($order) { 
+            $order->updateQuietly([
+                'total_price' => $order->calculateTotalPrice(),
+            ]);
         });
     }
-    function getTotalPriceAttribute() {
-        return $this->products()->sum(DB::raw('price * quantity'));
-    }
+    // function getTotalPriceAttribute() {
+    //     return $this->products()->sum(DB::raw('price * quantity'));
+    // }
 
     private static function generateWarehouseNumber()
     {
@@ -76,7 +85,7 @@ class Order extends Model
         return $this->belongsTo(Address::class, 'recipient_id');
     }
     public function calculateTotalPrice()
-    {
+    { 
         return $this->items()->sum(DB::raw('price * quantity'));
     }
 
