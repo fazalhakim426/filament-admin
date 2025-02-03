@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Deposit;
 use App\Models\Order;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -11,12 +12,10 @@ Route::get('', function () {
 
 Route::get('/order-test',function ()  {
       // Create orders
-      Order::factory()->create([
-        'customer_user_id' =>1,
-        'recipient_id' => 1,
-        'sender_id' =>1,
-        'total_price' =>3,
-      ]);
-      dd(Order::all());
+       
+      dump(['referralDeposits'=>Deposit::referralDeposits()->count()]);
+      dump(['CashInOut'=>Deposit::cashInOut()->count()]);
+      dump(['OrderDeposits'=>Deposit::orderDeposits()->count()]);
+      dd(Deposit::count());
 });
 require __DIR__.'/auth.php';

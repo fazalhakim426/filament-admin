@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use App\Models\City;
+use App\Models\Order;
 use Illuminate\Support\Str;
 
 class DatabaseSeeder extends Seeder
@@ -49,5 +50,12 @@ class DatabaseSeeder extends Seeder
             ReferralsSeeder::class,
             EmployeeSeeder::class
         ]);
+        $order = Order::all();
+        foreach ($order as $order) {
+            
+            $order->updateQuietly([
+                'total_price' => $order->calculateTotalPrice(),
+            ]);
+        }
     }
 }

@@ -2,30 +2,27 @@
 
 namespace App\Filament\Resources\Shop;
 
-use App\Enums\OrderStatus;
-use App\Filament\Resources\ProductResource;
-use App\Filament\Resources\Shop\OrderResource\Pages;
-use App\Filament\Resources\Shop\OrderResource\RelationManagers;
-use App\Filament\Resources\Shop\OrderResource\Widgets\OrderStats;
-use App\Forms\Components\AddressForm;
+use App\Filament\Resources\Shop\OrderResource\Pages; 
+use App\Filament\Resources\Shop\OrderResource\Widgets\OrderStats; 
+use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Notifications\Notification;
+use Filament\Forms\Components\Repeater; 
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Filament\Tables\Actions\Action; 
+use Filament\Resources\Resource;
+use App\Enums\OrderStatus; 
 use App\Models\Deposit;
 use App\Models\Order;
 use App\Models\Product;
-
-use Filament\Tables\Actions\Action;
 use Filament\Forms;
-use Filament\Forms\Components\Repeater;
 use Filament\Forms\Form;
-use Filament\Notifications\Notification;
-use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Illuminate\Support\Carbon;
-use Squire\Models\Currency;
-
+use Illuminate\Support\Carbon; 
+use Filament\Forms\Components\Placeholder; 
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
 class OrderResource extends Resource
 {
     protected static ?string $model = Order::class;
@@ -51,7 +48,7 @@ class OrderResource extends Resource
                             ->columns(2),
                         Forms\Components\Section::make('Order items')
                             ->headerActions([
-                                Action::make('reset')
+                                \Filament\Forms\Components\Actions\Action::make('reset')
                                     ->modalHeading('Are you sure?')
                                     ->modalDescription('All existing items will be removed from the order.')
                                     ->requiresConfirmation()
@@ -105,13 +102,8 @@ class OrderResource extends Resource
                 //     ->sortable()
                 //     ->toggleable(),
                 Tables\Columns\TextColumn::make('total_price')
-                    ->money('PKR')
-                    ->searchable()
-                    ->sortable()
-                    ->summarize([
-                        Tables\Columns\Summarizers\Sum::make()
-                            ->money(),
-                    ]),
+                    ->money('PKR'),
+                    
                 Tables\Columns\TextColumn::make('total_price')
                     ->money('PKR')
                     ->label('Shipping Cost')
@@ -120,9 +112,10 @@ class OrderResource extends Resource
                     ->toggleable()
                     ->summarize([
                         Tables\Columns\Summarizers\Sum::make()
-                            ->money(),
+                            ->money('pkr'),
                     ]),
             ])
+            ->defaultSort('created_at','DESC')
             ->filters([
                 Tables\Filters\TrashedFilter::make(),
 
@@ -157,39 +150,64 @@ class OrderResource extends Resource
                     }),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make(), 
                 Action::make('Pay')
                     ->modalHeading('Make a Payment')
                     ->modalButton('Pay Now')
                     ->icon('heroicon-o-currency-dollar')
                     ->form([
-                        Forms\Components\TextInput::make('amount')
+                        // Show User Balance
+                        Placeholder::make('balance')
+                            ->label('User Balance')
+                            ->content(fn(Order $record) => 'PKR ' . number_format($record->customerUser->balance ?? 0, 2)),
+                 
+                
+                        // Show Total Paid and Need to Pay
+                        Placeholder::make('paid')
+                            ->label('Total Paid')
+                            ->content(fn(Order $record) => 'PKR ' . number_format($record->paid, 2)),
+                
+                        Placeholder::make('need_to_pay')
+                            ->label('Amount Due')
+                            ->content(fn(Order $record) => 'PKR ' . number_format($record->need_to_pay, 2)),
+                
+                        // Payment Input
+                        TextInput::make('amount')
                             ->label('Amount to Pay')
                             ->numeric()
-                            ->default(fn(Order $record) => $record->need_to_pay) // Prefill with need_to_pay
+                            ->default(fn(Order $record) => $record->need_to_pay)
                             ->required(),
-                        Forms\Components\Select::make('provider')
-                            ->options([
-                                'bank_transfer' => 'Bank Transfer',
-                                'credit_card' => 'Credit Card',
-                                'cash' => 'Cash',
-                                'account' => 'account',
-                            ])
-                            ->label('Payment Method')
-                            ->required(),
-                        Forms\Components\Textarea::make('description')->label('Description'),
+                
+                        Textarea::make('description')->label('Description'),
                     ])
-                    ->action(fn(array $data, Order $record) => self::handlePayment($record, $data['amount'], $data['provider'], $data['description']))
+                    ->action(fn(array $data, Order $record) => self::handlePayment($record, $data['amount'], $data['description']))
                     ->visible(fn(Order $record) => $record->need_to_pay > 0),
+                
+
+
 
                 Action::make('Refund')
                     ->modalHeading('Refund Payment')
                     ->modalButton('Refund Now')
                     ->icon('heroicon-o-arrow-uturn-left')
                     ->form([
+                        Placeholder::make('balance')
+                        ->label('User Balance')
+                        ->content(fn(Order $record) => 'PKR ' . number_format($record->customerUser->balance ?? 0, 2)),
+                        // Show Total Paid and Need to Pay
+                        Placeholder::make('paid')
+                            ->label('Total Paid')
+                            ->content(fn(Order $record) => 'PKR ' . number_format($record->paid, 2)),
+                
+                        Placeholder::make('need_to_pay')
+                            ->label('Amount Due')
+                            ->content(fn(Order $record) => 'PKR ' . number_format($record->need_to_pay, 2)),
+                
+
                         Forms\Components\TextInput::make('amount')
                             ->label('Amount to Refund')
-                            ->numeric()
+                            ->numeric()                            
+                            ->default(fn(Order $record) => $record->paid) // Prefill with need_to_pay
                             ->required(),
                         Forms\Components\Textarea::make('description')->label('Reason for Refund'),
                     ])
@@ -433,30 +451,30 @@ class OrderResource extends Resource
             ])
             ->required();
     }
-    protected static function handlePayment(Order $order, $amount, $provider, $description = null)
+    protected static function handlePayment(Order $order, $amount, $description = null)
     {
-        Deposit::create([
-            'transaction_reference' => 'TXN-' . time(),
-            'user_id' => $order->user_id,
+        $order->update(['status'=>'paid']);
+        Deposit::create([ 
+            'user_id' => $order->customer_user_id,
             'order_id' => $order->id,
             'amount' => $amount,
-            'transaction_type' => 'credit',
-            'deposit_type' => 'order_payment',
+            'transaction_type' => 'debit',
+            'deposit_type' => 'wallet',
             'currency' => 'PKR',
-            'provider' => $provider,
-            'balance' => 0,
+            'provider' => 'Account Balance', 
             'description' => $description,
         ]);
     }
 
     protected static function handleRefund(Order $order, $amount, $description = null)
     {
-        Deposit::create([
-            'transaction_reference' => 'TXN-' . time(),
-            'user_id' => $order->user_id,
+        
+        $order->update(['status'=>'refunded']);
+        Deposit::create([ 
+            'user_id' => $order->customer_user_id,
             'order_id' => $order->id,
             'amount' => $amount,
-            'transaction_type' => 'debit', // Debit means refunded
+            'transaction_type' => 'credit', // Debit means refunded
             'deposit_type' => 'order_refund',
             'currency' => 'PKR', 
             'description' => $description,

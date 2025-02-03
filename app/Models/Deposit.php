@@ -48,7 +48,6 @@ class Deposit extends Model
             $deposit->update(['balance' => $deposit->user->balance + $adjustment]);
             $deposit->user->update(['balance' => $deposit->user->balance + $adjustment]);
         });
-
         static::deleted(function ($deposit) {
             $adjustment = $deposit->transaction_type == 'credit' ? $deposit->amount : -$deposit->amount;
             $adjustment = $adjustment * -1;
@@ -56,4 +55,20 @@ class Deposit extends Model
             $deposit->user->update(['balance' => $deposit->user->balance + $adjustment]);
         });
     }
-}
+    
+        public function scopeOrderDeposits($query)
+        {
+            return $query->where('order_id','!=',null);
+        }
+    
+        public function scopeReferralDeposits($query)
+        {
+            return $query->where('referral_id','!=',null);
+        }
+    
+        public function scopeCashInOut($query)
+        {
+            return $query->where('referral_id','=',null)->where('order_id','=',null);
+        }
+    }
+    

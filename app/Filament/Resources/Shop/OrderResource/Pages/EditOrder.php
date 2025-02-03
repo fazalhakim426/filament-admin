@@ -18,4 +18,11 @@ class EditOrder extends EditRecord
             Actions\ForceDeleteAction::make(),
         ];
     }
+    protected function afterSave(): void
+    { 
+        $order = ($this->record);
+        $order->updateQuietly([
+            'total_price' => $order->calculateTotalPrice(),
+        ]);
+    }
 }

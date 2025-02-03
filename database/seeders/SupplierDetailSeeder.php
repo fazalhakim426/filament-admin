@@ -54,11 +54,10 @@ class SupplierDetailSeeder extends Seeder
                 $quantity = mt_rand(1, 4);
 
                 // Create orders
-                Order::factory(3)->create([
+                Order::factory(10)->create([
                     'customer_user_id' => $user->id,
                     'recipient_id' => $addresses[1]->id,
-                    'sender_id' => $addresses[0]->id,
-                    'total_price' => $products->sum('unit_selling_price'),
+                    'sender_id' => $addresses[0]->id, 
                 ])->each(function ($order) use ($user, $supplierDetail, $quantity, $products) {
                     echo "Created Order: {$order->id} for Customer: {$user->id}\n";
 

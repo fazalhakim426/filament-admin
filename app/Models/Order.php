@@ -49,13 +49,24 @@ class Order extends Model
         parent::boot();
         static::creating(function ($order) {
             $order->warehouse_number = self::generateWarehouseNumber();
-            $order->total_price =  $order->calculateTotalPrice();
         });
-        static::updated(function ($order) {
-            $order->total_price =  $order->calculateTotalPrice();
+    
+        static::created(function ($order) { 
+
+            $order->updateQuietly([
+                'total_price' => $order->calculateTotalPrice(),
+            ]);
+        });
+    
+        static::updated(function ($order) { 
+            $order->updateQuietly([
+                'total_price' => $order->calculateTotalPrice(),
+            ]);
         });
     }
-
+    // function getTotalPriceAttribute() {
+    //     return $this->products()->sum(DB::raw('price * quantity'));
+    // }
 
     private static function generateWarehouseNumber()
     {
@@ -74,19 +85,21 @@ class Order extends Model
         return $this->belongsTo(Address::class, 'recipient_id');
     }
     public function calculateTotalPrice()
-    {
+    { 
         return $this->items()->sum(DB::raw('price * quantity'));
     }
 
    
     public function deposits(): HasMany
     {
-        return $this->hasMany(Deposit::class);
+        return $this->hasMany(Deposit::class,'order_id');
     }
 
     public function getPaidAttribute()
     {
         return $this->deposits()
+            ->where('transaction_type', 'debit')
+            ->sum('amount')-$this->deposits()
             ->where('transaction_type', 'credit')
             ->sum('amount');
     }
@@ -94,12 +107,12 @@ class Order extends Model
     public function getRefundedAttribute()
     {
         return $this->deposits()
-            ->where('transaction_type', 'debit')
+            ->where('transaction_type', 'credit')
             ->sum('amount');
     }
 
     public function getNeedToPayAttribute()
     {
-        return ($this->total_price + $this->refunded) - $this->paid;
+        return $this->total_price  - $this->paid;
     } 
 }
