@@ -52,7 +52,7 @@ class EmployeeResource extends Resource
                 Forms\Components\Textarea::make('address')
                     ->columnSpanFull(),
                 Forms\Components\TextInput::make('phone')
-                    ->maxLength(15), 
+                    ->maxLength(25), 
                 Select::make('city_id')
                     ->label('City')
                     ->relationship(name: 'city', titleAttribute: 'name'),
