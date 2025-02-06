@@ -125,6 +125,7 @@ return new class extends Migration
             $table->decimal('unit_selling_price', 10, 2); //current selling price
             $table->string('sku')->nullable();
             $table->boolean('is_active')->default(true);
+            $table->boolean('manzil_choice')->default(false);
             $table->softDeletes();
             $table->timestamps();
             $table->index(['id']);
@@ -138,9 +139,10 @@ return new class extends Migration
             $table->foreignId('recipient_id')->constrained('addresses');
             $table->foreignId('sender_id')->constrained('addresses');
             $table->decimal('total_price', 10, 2)->nullable();
-            $table->string('status')->default('new'); //['new', 'processing','confirmed', 'paid', 'refunded', 'shipped', 'delivered', 'canceled']
+            $table->string('order_status')->default('new'); //['new', 'processing','confirmed', 'shipped', 'delivered', 'canceled']
+            $table->string('payment_status')->default('unpaid'); //[ 'unpaid', 'paid', 'refunded']
             $table->softDeletes();
-            $table->timestamps(); 
+            $table->timestamps();
         });
 
         Schema::create('order_items', function (Blueprint $table) {
@@ -150,7 +152,7 @@ return new class extends Migration
             $table->foreignId('product_id')->constrained('products'); //a,b 
             $table->integer('quantity'); //1 
             $table->decimal('price', 10, 2);
-            $table->enum('status', ['pending', 'confirmed', 'canceled'])->default('pending');
+            $table->enum('order_status', ['pending', 'confirmed', 'canceled'])->default('pending');
         });
         // Inventory Movements table
         Schema::create('inventory_movements', function (Blueprint $table) {

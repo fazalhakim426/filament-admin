@@ -13,11 +13,11 @@ class SyncPermissionsSeeder extends Seeder
      */
     public function run(): void
     { 
-        Artisan::call('permissions:sync', [
-            '-C' => true, // Pass the `-C` option
-        ]);  
-        // run 
-        // php artisan permissions:sync -C if no permission found.
-        $this->command->info('Permissions have been synced successfully!');
+        // Artisan::call('permissions:sync', [
+        //     '-C' => true, // Pass the `-C` option
+        // ]);  
+        // //run 
+        // //php artisan permissions:sync -C if no permission found.
+        // $this->command->info('Permissions have been synced successfully!');
     }
 }

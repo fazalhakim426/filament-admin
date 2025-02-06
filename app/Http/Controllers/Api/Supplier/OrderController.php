@@ -50,7 +50,7 @@ class OrderController extends Controller
             ], 400);
         }
 
-        $order->update(['status' => 'confirmed']);
+        $order->update(['order_status' => 'confirmed']);
 
         return response()->json([
             'message' => 'Order confirmed successfully.',
@@ -66,7 +66,7 @@ class OrderController extends Controller
                 'message' => 'Only pending orders can be confirmed.',
             ], 400);
         }
-        $item->update(['status' => 'confirmed']);
+        $item->update(['order_status' => 'confirmed']);
 
         return response()->json([
             'message' => 'Order item confirmed successfully.',
@@ -82,7 +82,7 @@ class OrderController extends Controller
             ], 400);
         }
 
-        $order->update(['status' => 'canceled']);
+        $order->update(['order_status' => 'canceled']);
 
         return response()->json([
             'message' => 'Order rejected successfully.',
@@ -97,7 +97,7 @@ class OrderController extends Controller
                 'message' => 'Only pending orders can be rejected.',
             ], 400);
         }
-        $item->update(['status' => 'confirmed']);
+        $item->update(['order_status' => 'confirmed']);
 
         return response()->json([
             'message' => 'Order item rejected successfully.',
@@ -113,7 +113,7 @@ class OrderController extends Controller
             ], 400);
         }
 
-        $order->update(['status' => 'paid']);
+        $order->update(['order_status' => 'paid']);
 
         return response()->json([
             'message' => 'Order confirmed successfully.',
@@ -130,7 +130,7 @@ class OrderController extends Controller
             ], 400);
         }
 
-        $order->update(['status' => 'refunded']);
+        $order->update(['order_status' => 'refunded']);
 
         return response()->json([
             'message' => 'Order confirmed successfully.',
@@ -148,7 +148,7 @@ class OrderController extends Controller
             ], 400);
         }
 
-        $order->update(['status' => 'shipped']);
+        $order->update(['order_status' => 'shipped']);
 
         return response()->json([
             'message' => 'Order dispatched successfully.',
@@ -181,15 +181,15 @@ class OrderController extends Controller
         // Return the PDF as a download
         // return $pdf->download($fileName);
 
-    $orderData = [
-        'warehouse_number' => $order->warehouse_number,
-        'total_price' => $order->total_price,
-        'order_id' => $order->id,
-    ];
+        $orderData = [
+            'warehouse_number' => $order->warehouse_number,
+            'total_price' => $order->total_price,
+            'order_id' => $order->id,
+        ];
 
-    $pdf = Pdf::loadView('pdf.airway_bill', $orderData);
+        $pdf = Pdf::loadView('pdf.airway_bill', $orderData);
 
-    return $pdf->download("Order_{$order->id}_Airway_Bill.pdf");
+        return $pdf->download("Order_{$order->id}_Airway_Bill.pdf");
     }
 
     public function airwayBillText(Order $order)
@@ -248,7 +248,7 @@ class OrderController extends Controller
             ], 400);
         }
 
-        $order->update(['status' => 'delivered']);
+        $order->update(['order_status' => 'delivered']);
 
         return response()->json([
             'message' => 'Order deivered successfully.',

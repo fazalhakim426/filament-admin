@@ -30,13 +30,13 @@ class ListOrders extends ListRecords
     {
         return [
              null => Tab::make('All'),
-            'new' => Tab::make()->query(fn ($query) => $query->where('status', 'new')),
-            'processing' => Tab::make()->query(fn ($query) => $query->where('status', 'processing')),
-            'confirmed' => Tab::make()->query(fn ($query) => $query->where('status', 'confirmed')),
-            'shipped' => Tab::make()->query(fn ($query) => $query->where('status', 'shipped')),
-            'delivered' => Tab::make()->query(fn ($query) => $query->where('status', 'delivered')),
-            'canceled' => Tab::make()->query(fn ($query) => $query->where('status', 'canceled')),
-            'refunded' => Tab::make()->query(fn ($query) => $query->where('status', 'refunded')),
+            'new' => Tab::make()->query(fn ($query) => $query->where('order_status', 'new')),
+            'processing' => Tab::make()->query(fn ($query) => $query->where('order_status', 'processing')),
+            'confirmed' => Tab::make()->query(fn ($query) => $query->where('order_status', 'confirmed')),
+            'shipped' => Tab::make()->query(fn ($query) => $query->where('order_status', 'shipped')),
+            'delivered' => Tab::make()->query(fn ($query) => $query->where('order_status', 'delivered')),
+            'canceled' => Tab::make()->query(fn ($query) => $query->where('order_status', 'canceled')),
+            'refunded' => Tab::make()->query(fn ($query) => $query->where('order_status', 'refunded')),
         ];
     }
 }

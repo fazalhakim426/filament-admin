@@ -19,8 +19,7 @@ class OrdersRelationManager extends RelationManager
     public function form(Form $form): Form
     {
         return $form
-            ->schema([ 
-               ]);
+            ->schema([]);
     }
 
     public function table(Table $table): Table
@@ -34,7 +33,7 @@ class OrdersRelationManager extends RelationManager
                     ->searchable()
                     ->sortable()
                     ->toggleable(),
-                Tables\Columns\TextColumn::make('status')
+                Tables\Columns\TextColumn::make('order_status')
                     ->badge()
                     ->color(fn($record) => $record->status === 'pending' ? 'gray' : ($record->status === 'confirmed' ? 'primary' : ($record->status === 'shipped' ? 'success' : ($record->status === 'delivered' ? 'success' : ($record->status === 'canceled' ? 'danger' : 'gray'))))),
 

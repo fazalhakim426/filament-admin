@@ -92,10 +92,27 @@ class OrderResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->toggleable(),
-                Tables\Columns\TextColumn::make('status')
+                    Tables\Columns\TextColumn::make('payment_status')
                     ->badge()
-                    ->color(fn($record) => $record->status === 'pending' ? 'gray' : ($record->status === 'confirmed' ? 'primary' : ($record->status === 'shipped' ? 'success' : ($record->status === 'delivered' ? 'success' : ($record->status === 'canceled' || $record->status === 'refunded' ? 'danger' : 'gray'))))),
-
+                    ->color(fn($record) => match ($record->payment_status) {
+                        'unpaid' => 'gray',
+                        'paid' => 'success',
+                        'refunded' => 'danger',
+                        default => 'gray',
+                    }),
+                
+                Tables\Columns\TextColumn::make('order_status')
+                    ->badge()
+                    ->color(fn($record) => match ($record->order_status) {
+                        'new' => 'gray',
+                        'processing' => 'warning',
+                        'confirmed' => 'primary',
+                        'shipped' => 'success',
+                        'delivered' => 'success',
+                        'canceled' => 'danger',
+                        default => 'gray',
+                    }),
+                
                 // Tables\Columns\TextColumn::make('currency')
                 //     ->getStateUsing(fn ($record): ?string => Currency::find($record->currency)?->name ?? null)
                 //     ->searchable()
@@ -284,7 +301,7 @@ class OrderResource extends Resource
         /** @var class-string<Model> $modelClass */
         $modelClass = static::$model;
 
-        return (string) $modelClass::where('status', 'new')->count();
+        return (string) $modelClass::where('order_status', 'new')->count();
     }
 
     /** @return Forms\Components\Component[] */
@@ -372,7 +389,7 @@ class OrderResource extends Resource
             //         ->modalWidth('lg');
             // })
 
-            Forms\Components\ToggleButtons::make('status')
+            Forms\Components\ToggleButtons::make('order_status')
                 ->inline()
                 ->options(OrderStatus::class)
                 ->required(),
@@ -453,7 +470,7 @@ class OrderResource extends Resource
     }
     protected static function handlePayment(Order $order, $amount, $description = null)
     {
-        $order->update(['status'=>'paid']);
+        $order->update(['payment_status'=>'paid']);
         Deposit::create([ 
             'user_id' => $order->customer_user_id,
             'order_id' => $order->id,
@@ -469,7 +486,7 @@ class OrderResource extends Resource
     protected static function handleRefund(Order $order, $amount, $description = null)
     {
         
-        $order->update(['status'=>'refunded']);
+        $order->update(['payment_status'=>'refunded']);
         Deposit::create([ 
             'user_id' => $order->customer_user_id,
             'order_id' => $order->id,

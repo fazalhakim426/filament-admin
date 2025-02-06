@@ -117,8 +117,8 @@ class SupplierResource extends Resource
                                 $record->roles()->sync($state);
                             })
                             ->options(
-                             Role::whereIn('name', ['Supplier','Admin'])->pluck('name', 'id')
-                                   
+                                Role::whereIn('name', ['Supplier', 'Admin'])->pluck('name', 'id')
+
                             )
                             ->multiple()
                             ->preload()
@@ -138,8 +138,22 @@ class SupplierResource extends Resource
                             ->label('Contact Person'),
                         Forms\Components\TextInput::make('website')
                             ->label('Website'),
-                        Forms\Components\TextInput::make('supplier_type')
-                            ->label('Supplier Type'),
+                        Select::make('supplier_type')
+                            ->label('Supplier Type')
+                            ->options([
+                                'wholesale' => 'Wholesale',
+                                'retail' => 'Retail',
+                                'distributor' => 'Distributor',
+                            ]),
+
+                        Select::make('ecommerce_experience')
+                            ->label('E-commerce Experience')
+                            ->options([
+                                'none' => 'None',
+                                '1-3 years' => '1-3 Years',
+                                '3-5 years' => '3-5 Years',
+                                '5+ years' => '5+ Years',
+                            ]),
 
                         // Category and Sub-category with proper relation
                         Select::make('category_id')
@@ -175,8 +189,6 @@ class SupplierResource extends Resource
                         Forms\Components\TextInput::make('product_range')
                             ->label('Product Range'),
 
-                        Forms\Components\TextInput::make('ecommerce_experience')
-                            ->label('E-commerce Experience'),
                         Forms\Components\TextInput::make('marketing_type')
                             ->label('Marketing Type'),
 

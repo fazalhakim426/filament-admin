@@ -79,7 +79,8 @@ class InventoryMovementResource extends Resource
                 TextInput::make('quantity')
                     ->label('Quantity')
                     ->required()
-                    ->numeric(),
+                    ->numeric()
+                    ->minValue(1),
                 // Quantity
                 TextInput::make('description')
                     ->label('Description')
@@ -89,6 +90,7 @@ class InventoryMovementResource extends Resource
                 TextInput::make('unit_price')
                     ->label('Unit Cost Price')
                     ->required()
+                    ->minValue(1)
                     ->numeric(),
             ]);
     }
@@ -133,7 +135,7 @@ class InventoryMovementResource extends Resource
             ])
             ->actions([
                 // Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                // Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

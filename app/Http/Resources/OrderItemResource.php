@@ -23,7 +23,7 @@ class OrderItemResource extends JsonResource
                 'total' => $this->quantity * $this->price,
                 'unit_price' => $this->unit_price,
                 'unit_selling_price' => $this->unit_selling_price,
-                'status' => $this->status,
+                'order_status' => $this->status,
                 'product' => new ProductResource($this->whenLoaded('product')),
                 // 'order' => new  OrderResource($this->order),
                 // 'product' =>new ProductResource($this->product),

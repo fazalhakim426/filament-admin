@@ -18,7 +18,7 @@ class Order extends Model
         'recipient_id',
         'sender_id',
         'total_price',
-        'status',
+        'order_status',
         'created_at',
         'updated_at',
     ];
@@ -50,15 +50,15 @@ class Order extends Model
         static::creating(function ($order) {
             $order->warehouse_number = self::generateWarehouseNumber();
         });
-    
-        static::created(function ($order) { 
+
+        static::created(function ($order) {
 
             $order->updateQuietly([
                 'total_price' => $order->calculateTotalPrice(),
             ]);
         });
-    
-        static::updated(function ($order) { 
+
+        static::updated(function ($order) {
             $order->updateQuietly([
                 'total_price' => $order->calculateTotalPrice(),
             ]);
@@ -85,21 +85,21 @@ class Order extends Model
         return $this->belongsTo(Address::class, 'recipient_id');
     }
     public function calculateTotalPrice()
-    { 
+    {
         return $this->items()->sum(DB::raw('price * quantity'));
     }
 
-   
+
     public function deposits(): HasMany
     {
-        return $this->hasMany(Deposit::class,'order_id');
+        return $this->hasMany(Deposit::class, 'order_id');
     }
 
     public function getPaidAttribute()
     {
         return $this->deposits()
             ->where('transaction_type', 'debit')
-            ->sum('amount')-$this->deposits()
+            ->sum('amount') - $this->deposits()
             ->where('transaction_type', 'credit')
             ->sum('amount');
     }
@@ -114,5 +114,21 @@ class Order extends Model
     public function getNeedToPayAttribute()
     {
         return $this->total_price  - $this->paid;
-    } 
+    }
+    public function getStatusAttribute()
+    {
+        if ($this->payment_status === 'refunded' || $this->order_status === 'canceled') {
+            return 'canceled';
+        }
+
+        if ($this->payment_status === 'unpaid') {
+            return 'pending';
+        }
+
+        if ($this->order_status === 'delivered' && $this->payment_status === 'paid') {
+            return 'completed';
+        }
+
+        return $this->order_status;
+    }
 }
