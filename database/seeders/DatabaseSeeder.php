@@ -2,11 +2,14 @@
 
 namespace Database\Seeders;
 
+use App\Enums\OrderStatus;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use App\Models\City;
+use App\Models\Deposit;
 use App\Models\Order;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class DatabaseSeeder extends Seeder
@@ -52,10 +55,21 @@ class DatabaseSeeder extends Seeder
         ]);
         $order = Order::all();
         foreach ($order as $order) {
-            
             $order->updateQuietly([
-                'total_price' => $order->calculateTotalPrice(),
+                'total_price' => $order->items()->sum(DB::raw('price * quantity')),
             ]);
+            if ($order->order_status != OrderStatus::New->value) {
+                Deposit::factory()->create([
+                    'user_id' => $order->customer_user_id,
+                    'order_id' => $order->id,
+                    'amount' => $order->total_price,
+                    'deposit_type' => 'debit',
+                    'description' => "Payment for {$order->warehouse_number}"
+                ]);
+                $order->update([
+                    'payment_status' => 'paid'
+                ]);
+            }
         }
     }
 }

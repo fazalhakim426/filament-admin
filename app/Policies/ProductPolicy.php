@@ -21,15 +21,15 @@ class ProductPolicy
      */
     public function view(User $user, Product $product): bool
     {
-        return $user->checkPermissionTo('view Product');
+        return $user->checkPermissionTo('view Product') && $user->id == $product->supplier_user_id;
     }
 
     /**
      * Determine whether the user can create models.
      */
-    public function create(User $user): bool
+    public function create(User $user,Product $product): bool
     {
-        return $user->checkPermissionTo('create Product');
+        return $user->checkPermissionTo('create Product') && $user->id == $product->supplier_user_id;
     }
 
     /**
@@ -37,7 +37,7 @@ class ProductPolicy
      */
     public function update(User $user, Product $product): bool
     {
-        return $user->checkPermissionTo('update Product');
+        return $user->checkPermissionTo('update Product') && $user->id == $product->supplier_user_id;;
     }
 
     /**

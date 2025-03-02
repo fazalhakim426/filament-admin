@@ -31,7 +31,7 @@ class AnalyticsController extends Controller
 
 
 
-    public function getProductSales(Request $request)
+    public function getProductSales()
     {
         // Get the authenticated user (supplier)
         $supplier = Auth::user();
@@ -42,7 +42,7 @@ class AnalyticsController extends Controller
                                                       SUM(order_items.price) as total_revenue')
             ->join('products', 'order_items.product_id', '=', 'products.id')
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
-            ->where('orders.status', 'delivered') // Ensure the orders are delivered
+            ->where('orders.order_status', 'delivered') // Ensure the orders are delivered
             ->where('order_items.supplier_user_id', $supplier->id) // Filter by the authenticated supplier
             ->groupBy('products.id')
             ->orderByDesc('total_revenue') // Order by total revenue

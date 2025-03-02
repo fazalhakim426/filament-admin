@@ -6,6 +6,7 @@ use App\Models\Customer;
 use App\Models\Order;
 use App\Models\Product;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Facades\DB;
 
 class OrderFactory extends Factory
 {
@@ -40,7 +41,7 @@ class OrderFactory extends Factory
 
             }
             $order->updateQuietly([
-                'total_price' => $order->calculateTotalPrice(),
+                'total_price' => $order->items()->sum(DB::raw('price * quantity')),
             ]);
         });
     }

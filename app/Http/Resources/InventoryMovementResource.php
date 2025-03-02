@@ -19,9 +19,9 @@ class InventoryMovementResource extends JsonResource
             'quantity' => $this->quantity,
             'unit_price' => $this->unit_price,
             'description' => $this->description,
-            'type'=>    $this->type,
+            'type'=>    $this->type, 
             'product' => new ProductResource($this->whenLoaded('product')),
-            'supplier' => new UserResource($this->supplierUser),
+            'supplier' => new UserResource($this->whenLoaded('supplierUser')),
         ];
     }
 }

@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Resources;
-
+ 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -17,16 +17,11 @@ class OrderItemResource extends JsonResource
         return
             [
                 'id' => $this->id,
-                'quantity' => $this->quantity,
-                'price' => $this->price,
-                'profit' => $this->price,
-                'total' => $this->quantity * $this->price,
-                'unit_price' => $this->unit_price,
-                'unit_selling_price' => $this->unit_selling_price,
-                'order_status' => $this->status,
-                'product' => new ProductResource($this->whenLoaded('product')),
-                // 'order' => new  OrderResource($this->order),
-                // 'product' =>new ProductResource($this->product),
+                'quantity' => $this->quantity, 
+                'price' =>(int) $this->price, 
+                'total_value' =>  $this->quantity*$this->price, 
+                'product' => new ItemProductResource($this->whenLoaded('product')),
+                // 'order' => new  OrderResource($this->order), 
                 // 'supplier' => new ProductResource($this->supplierUser),
             ];
     }

@@ -21,5 +21,12 @@ return Application::configure(basePath: dirname(__DIR__))
             'is_admin' => \App\Http\Middleware\IsAdmin::class,
         ]);
     })
-    ->withExceptions(function (Exceptions $exceptions) { 
-    })->create();
+   ->withExceptions(function (Exceptions $exceptions) { 
+        $exceptions->renderable(function (Throwable $exception, $request) {
+            if ($request->expectsJson()) {
+                return app(App\Exceptions\Handler::class)->render($request, $exception);
+            }
+        });
+    
+    })
+->create();

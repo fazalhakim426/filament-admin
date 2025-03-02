@@ -31,10 +31,20 @@ class LatestOrders extends BaseWidget
                 Tables\Columns\TextColumn::make('customerUser.name')
                     ->label('Customer')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('order_status')
+               
+                    Tables\Columns\TextColumn::make('order_status')
                     ->badge()
-                    ->color(fn($record) => $record->status === 'pending' ? 'gray' : ($record->status === 'confirmed' ? 'primary' : ($record->status === 'shipped' ? 'success' : ($record->status === 'delivered' ? 'success' : ($record->status === 'canceled'||$record->status === 'refunded' ? 'danger' : 'gray'))))),
-                Tables\Columns\TextColumn::make('total_price')
+                    ->color(fn($record) => match ($record->order_status) {
+                        'new' => 'gray',
+                        'processing' => 'warning',
+                        'confirmed' => 'primary',
+                        'shipped' => 'success',
+                        'delivered' => 'success',
+                        'canceled' => 'danger',
+                        default => 'gray',
+                    }),
+                
+                    Tables\Columns\TextColumn::make('total_price')
                     ->label('Cost')
                     ->prefix('RS')
                     ->sortable(),

@@ -11,7 +11,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Filament\Tables\Actions\Action; 
 use Filament\Resources\Resource;
-use App\Enums\OrderStatus; 
+use App\Enums\OrderStatus;
+use App\Enums\PaymentStatus;
 use App\Models\Deposit;
 use App\Models\Order;
 use App\Models\Product;
@@ -111,13 +112,7 @@ class OrderResource extends Resource
                         'delivered' => 'success',
                         'canceled' => 'danger',
                         default => 'gray',
-                    }),
-                
-                // Tables\Columns\TextColumn::make('currency')
-                //     ->getStateUsing(fn ($record): ?string => Currency::find($record->currency)?->name ?? null)
-                //     ->searchable()
-                //     ->sortable()
-                //     ->toggleable(),
+                    }), 
                 Tables\Columns\TextColumn::make('total_price')
                     ->money('PKR'),
                     
@@ -167,7 +162,6 @@ class OrderResource extends Resource
                     }),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(), 
                 Action::make('Pay')
                     ->modalHeading('Make a Payment')
                     ->modalButton('Pay Now')
@@ -198,7 +192,7 @@ class OrderResource extends Resource
                         Textarea::make('description')->label('Description'),
                     ])
                     ->action(fn(array $data, Order $record) => self::handlePayment($record, $data['amount'], $data['description']))
-                    ->visible(fn(Order $record) => $record->need_to_pay > 0),
+                    ->visible(fn(Order $record) => $record->need_to_pay > 0 && $record->order_status != OrderStatus::Canceled->value ),
                 
 
 
@@ -229,9 +223,11 @@ class OrderResource extends Resource
                         Forms\Components\Textarea::make('description')->label('Reason for Refund'),
                     ])
                     ->action(fn(array $data, Order $record) => self::handleRefund($record, $data['amount'], $data['description']))
-                    ->visible(fn(Order $record) => $record->paid > 0),
+                    ->visible(fn(Order $record) => $record->paid > 0 && !in_array($record->order_status , [OrderStatus::Confirmed->value, OrderStatus::Shipped->value, OrderStatus::Delivered->value] )),
 
-            ])
+            
+                    Tables\Actions\EditAction::make(), 
+                    ])
             ->groupedBulkActions([
                 Tables\Actions\DeleteBulkAction::make()
                     ->action(function () {
@@ -389,6 +385,10 @@ class OrderResource extends Resource
             //         ->modalWidth('lg');
             // })
 
+                // Forms\Components\ToggleButtons::make('payment_status')
+                //     ->inline()
+                //     ->options(PaymentStatus::class)
+                //     ->required(),
             Forms\Components\ToggleButtons::make('order_status')
                 ->inline()
                 ->options(OrderStatus::class)

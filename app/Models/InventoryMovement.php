@@ -9,7 +9,35 @@ use Illuminate\Support\Facades\Log;
 class InventoryMovement extends Model
 {
     use HasFactory;
-    protected $fillable = ['type', 'stock_quantity', 'product_id', 'type', 'stock_quantity', 'price'];
+    protected $fillable = [
+        'supplier_user_id',
+        'product_id',
+        'order_item_id',
+        'type',
+        'quantity',
+        'unit_price',
+        'total_price',
+        'description',
+    ];
+    public function setQuantityAttribute($value)
+    {
+        $this->attributes['quantity'] = $value;
+        $this->calculateTotalPrice();
+    }
+
+    public function setUnitPriceAttribute($value)
+    {
+        $this->attributes['unit_price'] = $value;
+        $this->calculateTotalPrice();
+    }
+
+    protected function calculateTotalPrice()
+    {
+        $quantity = $this->attributes['quantity'] ?? 0;
+        $unitPrice = $this->attributes['unit_price'] ?? 0;
+
+        $this->attributes['total_price'] = $quantity * $unitPrice;
+    }
     function product()
     {
         return $this->belongsTo(Product::class);
@@ -24,22 +52,29 @@ class InventoryMovement extends Model
     protected static function booted()
     {
         static::creating(function ($inventoryMovement) {
-            $product = $inventoryMovement->product;
-            if ($product) { 
-                if ($inventoryMovement->type == 'addition') {
-                    $product->update(['stock_quantity' => ($product->stock_quantity + $inventoryMovement->quantity)]);
-                } elseif ($inventoryMovement->type == 'deduction') {
-                    if ($product->stock_quantity < $inventoryMovement->quantity) {
-                        return new \Exception('Not enough stock.');
+                    $product = $inventoryMovement->product;
+                    if ($product){
+                        if ($inventoryMovement->type == 'addition'){
+                            $product->update([
+                                'stock_quantity' => ($product->stock_quantity + $inventoryMovement->quantity)
+                            ]);
+                        } elseif($inventoryMovement->type == 'deduction') {
+                            if($product->stock_quantity < $inventoryMovement->quantity) {
+                                Log::error('Stock Deduction Failed - Not Enough Stock', [
+                                    'stock_quantity' => $product->stock_quantity,
+                                    'requested_quantity' => $inventoryMovement->quantity,
+                                ]);
+                                throw new \Exception('Not enough stock.');
+                            }else {
+                                $product->update([
+                                    'stock_quantity' => ($product->stock_quantity - $inventoryMovement->quantity)
+                                ]); 
+                            }
+                        }
                     } else {
-                        $product->update(['stock_quantity' => ($product->stock_quantity - $inventoryMovement->quantity)]);
+                        throw new \Exception('Product not found for Inventory Movement.');
                     }
-                }
-            } else {
-                throw new \Exception('Product not found for Inventory Movement.');
-            }
-        });
-
+         });
 
         static::deleting(function ($inventoryMovement) {
             $product = $inventoryMovement->product;
@@ -60,7 +95,6 @@ class InventoryMovement extends Model
 
         static::updating(function ($inventoryMovement) {
             $product = $inventoryMovement->product;
-
             if ($product) {
                 // Revert the previous stock adjustment
                 $previousStockQuantity = $inventoryMovement->getOriginal('quantity');

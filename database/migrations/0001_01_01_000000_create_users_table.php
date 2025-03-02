@@ -126,41 +126,52 @@ return new class extends Migration
             $table->string('sku')->nullable();
             $table->boolean('is_active')->default(true);
             $table->boolean('manzil_choice')->default(false);
+            $table->boolean('sponsor')->default(false);
             $table->softDeletes();
             $table->timestamps();
             $table->index(['id']);
         });
-
         // Orders table
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
             $table->string('warehouse_number');
+            
             $table->foreignId('customer_user_id')->constrained('users');
             $table->foreignId('recipient_id')->constrained('addresses');
             $table->foreignId('sender_id')->constrained('addresses');
             $table->decimal('total_price', 10, 2)->nullable();
             $table->string('order_status')->default('new'); //['new', 'processing','confirmed', 'shipped', 'delivered', 'canceled']
-            $table->string('payment_status')->default('unpaid'); //[ 'unpaid', 'paid', 'refunded']
+            $table->string('payment_status')->default('unpaid'); //[ 'unpaid','pending', 'paid', 'refunded']
             $table->softDeletes();
             $table->timestamps();
+        });
+        
+        Schema::create('reviews', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('order_id')->constrained('orders')->onDelete('cascade');
+            $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade'); // Customer who rated
+            $table->decimal('rating_stars', 2, 1)->default(0); // Rating stars out of 5
+            $table->timestamps();
+            $table->index(['product_id', 'user_id']);
         });
 
         Schema::create('order_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('supplier_user_id')->constrained('users'); //for searching purpose the get saled items directly not through products and order.for future use.
-            $table->foreignId('order_id')->constrained('orders'); // 1
-            $table->foreignId('product_id')->constrained('products'); //a,b 
-            $table->integer('quantity'); //1 
+            $table->foreignId('order_id')->constrained('orders');
+            $table->foreignId('product_id')->constrained('products');
+            $table->integer('quantity');
             $table->decimal('price', 10, 2);
             $table->enum('order_status', ['pending', 'confirmed', 'canceled'])->default('pending');
         });
-        // Inventory Movements table
+
         Schema::create('inventory_movements', function (Blueprint $table) {
             $table->id();
             $table->foreignId('supplier_user_id')->constrained('users');
             $table->foreignId('product_id')->constrained('products');
             $table->foreignId('order_item_id')->nullable()->constrained('order_items');
-            $table->enum('type', ['addition', 'deduction']); // Record whether stock is added or sold
+            $table->enum('type', ['addition', 'deduction']);
             $table->integer('quantity');
             $table->decimal('unit_price', 10, 2);
             $table->decimal('total_price', 10, 2);
@@ -225,8 +236,8 @@ return new class extends Migration
         Schema::create('images', function (Blueprint $table) {
             $table->id();
             $table->string('url');
-            $table->unsignedBigInteger('imageable_id');
-            $table->string('imageable_type');
+            $table->enum('type', ['image', 'video']);
+            $table->morphs('imageable'); 
             $table->timestamps();
         });
     }
@@ -242,8 +253,9 @@ return new class extends Migration
         Schema::dropIfExists('referrals');
         Schema::dropIfExists('inventory_movements');
         Schema::dropIfExists('order_items');
+        Schema::dropIfExists('reviews');
         Schema::dropIfExists('orders');
-        Schema::dropIfExists('addresses');
+        Schema::dropIfExists('addresses'); 
         Schema::dropIfExists('products');
         Schema::dropIfExists('supplier_details');
         Schema::dropIfExists('user_profiles');

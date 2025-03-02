@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Shop\OrderResource\Pages;
 use App\Filament\Resources\Shop\OrderResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
+use Illuminate\Support\Facades\DB;
 
 class EditOrder extends EditRecord
 {
@@ -22,7 +23,7 @@ class EditOrder extends EditRecord
     { 
         $order = ($this->record);
         $order->updateQuietly([
-            'total_price' => $order->calculateTotalPrice(),
+            'total_price' => $order->items()->sum(DB::raw('price * quantity')),
         ]);
     }
 }

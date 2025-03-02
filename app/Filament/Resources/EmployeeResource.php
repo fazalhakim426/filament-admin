@@ -22,7 +22,7 @@ class EmployeeResource extends Resource
 {
     protected static ?string $model = User::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-users';
+    protected static ?string $navigationIcon = 'heroicon-o-identification';
 
     protected static ?string $label = 'Employee';
     protected static ?string $navigationGroup = 'Settings';

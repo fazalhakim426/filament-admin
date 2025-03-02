@@ -18,13 +18,17 @@ class OrderResource extends JsonResource
             [
                 'id' => $this->id,
                 'warehouse_number' => $this->warehouse_number,
-                'total_price' => $this->total_price,
+                'total_price' => (int)$this->total_price,
                 'order_status' => $this->status,
-                'created_at' => $this->created_at->diffForHumans(),
-                'updated_at' => $this->updated_at->diffForHumans(),
+                'payment_status' => $this->payment_status,
                 'need_to_pay' => $this->need_to_pay,
                 'items' =>   OrderItemResource::collection($this->items),
-                'customer' => new UserResource($this->customerUser)
+                'recipient'=> new AddressResource($this->recipient),
+                'sender'=> new AddressResource($this->sender),
+                'customer' => new UserResource($this->whenLoaded('customerUser')),
+                'deposit'=> new DepositResource($this->whenLoaded('sender')),
+                'created_at' => $this->created_at->diffForHumans(),
+                'updated_at' => $this->updated_at->diffForHumans(),
             ];
     }
 }

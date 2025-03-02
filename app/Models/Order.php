@@ -7,11 +7,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class Order extends Model
 {
     use HasFactory;
     use SoftDeletes;
+
     public $fillable = [
         'warehouse_number',
         'customer_user_id',
@@ -44,29 +46,79 @@ class Order extends Model
     {
         return $this->hasMany(OrderItem::class, 'order_id');
     }
+
+
     protected static function boot()
     {
         parent::boot();
+
         static::creating(function ($order) {
             $order->warehouse_number = self::generateWarehouseNumber();
         });
+        static::updating(function ($order) {
+            if ($order->isDirty('order_status')) {
+                $originalStatus = $order->getOriginal('order_status');
+                $newStatus = $order->order_status;
 
-        static::created(function ($order) {
+                Log::info("Order status changed from $originalStatus to $newStatus");
 
+                if ($newStatus === 'confirmed' && $originalStatus !== 'confirmed') {
+                    $order->deductInventory();
+                }
+                if (in_array($newStatus, ['canceled', 'refunded']) && !in_array($originalStatus, ['canceled', 'refunded'])) {
+                    $order->addInventory();
+                }
+            }
             $order->updateQuietly([
-                'total_price' => $order->calculateTotalPrice(),
-            ]);
-        });
-
-        static::updated(function ($order) {
-            $order->updateQuietly([
-                'total_price' => $order->calculateTotalPrice(),
+                'total_price' => $order->items()->sum(DB::raw('price * quantity')),
             ]);
         });
     }
-    // function getTotalPriceAttribute() {
-    //     return $this->products()->sum(DB::raw('price * quantity'));
-    // }
+    public function deductInventory()
+    {
+        foreach ($this->items as $item) {
+            $product = $item->product;
+
+            if ($product->stock_quantity < $item->quantity) {
+                throw new \Exception("Not enough stock for product ID: {$product->id}");
+            }
+
+            $product->decrement('stock_quantity', $item->quantity);
+
+            InventoryMovement::create([
+                'supplier_user_id' => $product->supplier_user_id,
+                'product_id' => $product->id,
+                'order_item_id' => $item->id,
+                'type' => 'deduction',
+                'quantity' => $item->quantity,
+                'unit_price' => $item->price,
+                'total_price' => $item->quantity * $item->price,
+                'description' => "Deducted for order #{$this->warehouse_number}",
+            ]);
+        }
+    }
+
+    public function addInventory()
+    {
+        foreach ($this->items as $item) {
+            $product = $item->product;
+
+            $product->increment('stock_quantity', $item->quantity);
+
+            InventoryMovement::create([
+                'supplier_user_id' => $product->supplier_user_id,
+                'product_id' => $product->id,
+                'order_item_id' => $item->id,
+                'type' => 'addition',
+                'quantity' => $item->quantity,
+                'unit_price' => $item->price,
+                'total_price' => $item->quantity * $item->price,
+                'description' => "Restocked for order #{$this->warehouse_number} - status: {$this->order_status}",
+            ]);
+        }
+    }
+
+
 
     private static function generateWarehouseNumber()
     {
@@ -83,10 +135,6 @@ class Order extends Model
     function recipient()
     {
         return $this->belongsTo(Address::class, 'recipient_id');
-    }
-    public function calculateTotalPrice()
-    {
-        return $this->items()->sum(DB::raw('price * quantity'));
     }
 
 

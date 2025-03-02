@@ -4,9 +4,14 @@ return [
     'middleware' => [
         'web',
         'auth',
-        'is_admin',  
+        'is_admin',
     ],
-    
+    'brand' => [
+        'colors' => [
+            'primary' => '#4F46E5', // Change this to your preferred color
+        ],
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Broadcasting

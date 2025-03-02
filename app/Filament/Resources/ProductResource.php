@@ -16,12 +16,14 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\FileUpload;
+
 class ProductResource extends Resource
 {
     protected static ?string $model = Product::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-archive-box';
-    // protected static ?int $navigationSort = 2;
+    protected static ?string $navigationIcon = 'heroicon-o-shopping-bag';
     protected static ?string $navigationGroup = 'Shop';
     protected static ?string $recordTitleAttribute = 'name';
 
@@ -31,7 +33,34 @@ class ProductResource extends Resource
     {
         return $form
             ->schema([
+                Repeater::make('images')
+                    ->label('Product Media')
+                    ->relationship('images') // Connects to the polymorphic relationship
+                    ->schema([
+                        Select::make('type')
+                            ->options([
+                                'image' => 'Image',
+                                'video' => 'Video',
+                            ])
+                            ->default('image')
+                            ->required(),
 
+                        FileUpload::make('url')
+                            ->label('Upload File')
+                            ->preserveFilenames()
+                            ->directory('products/media')
+                            ->required()
+                            ->image()
+                            ->acceptedFileTypes(['image/*', 'video/mp4', 'video/avi', 'video/mov', 'video/webm']) // Allow images & videos
+                            ->maxSize(102400), // 100MB max
+                    ])
+                    ->minItems(1)
+                    ->maxItems(10)
+                    ->columnSpanFull(),
+
+                Forms\Components\TextInput::make('name')
+                    ->required()
+                    ->maxLength(255),
                 Select::make('supplier_user_id')
                     ->label('Supplier')
                     ->relationship('supplierUser', 'name', function (Builder $query) {
@@ -48,28 +77,33 @@ class ProductResource extends Resource
                     ->preload()
                     ->searchable()
                     ->relationship('category', 'name')
-                    ->createOptionForm([
-                        TextInput::make('name')
-                            ->required()
-                            ->maxLength(255),
-                        TextInput::make('description')
-                            ->required()
-                            ->maxLength(255),
-                    ])
-                    ->required(),
+                    ->required()
+                    ->live() // Triggers Livewire updates
+                    ->afterStateUpdated(fn($state, callable $set) => $set('sub_category_id', null)), // Reset subcategory when category changes
+
+                Select::make('sub_category_id')
+                    ->label('Sub Category')
+                    ->preload()
+                    ->searchable()
+                    ->relationship('subCategory', 'name')
+                    ->required()
+                    ->options(fn($get) => \App\Models\SubCategory::where('category_id', $get('category_id'))->pluck('name', 'id'))
+                    ->live() // Ensures real-time updates
+                    ->reactive(),
                 Forms\Components\Textarea::make('description')
                     ->columnSpanFull(),
-                Forms\Components\TextInput::make('name')
-                    ->required()
-                    ->maxLength(255),
                 Forms\Components\TextInput::make('unit_selling_price')
                     ->required()
                     ->numeric()
-                    ->prefix('$'),
+                    ->prefix('PKR'),
                 Forms\Components\TextInput::make('sku')
                     ->label('SKU')
                     ->maxLength(255),
                 Forms\Components\Toggle::make('is_active')
+                    ->required(),
+                Forms\Components\Toggle::make('sponsor')
+                    ->required(),
+                Forms\Components\Toggle::make('manzil_choice')
                     ->required(),
             ]);
     }
@@ -78,6 +112,11 @@ class ProductResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\ImageColumn::make('images.url')
+                    ->label('Images')
+                    ->circular()
+                    ->size(50)
+                    ->limit(3), // Show up to 3 images in a row
                 Tables\Columns\TextColumn::make('supplierUser.name')
                     ->label('Supplier')
                     ->searchable()
@@ -86,7 +125,7 @@ class ProductResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('unit_selling_price')
                     ->label('Selling')
-                    ->money()
+                    ->money('pkr')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('stock_quantity')
                     ->label('Quantity')
@@ -97,6 +136,12 @@ class ProductResource extends Resource
                     ->searchable(),
                 Tables\Columns\IconColumn::make('is_active')
                     ->label('Active')
+                    ->boolean(),
+                Tables\Columns\IconColumn::make('manzil_choice')
+                    ->label('Choice')
+                    ->boolean(),
+                Tables\Columns\IconColumn::make('sponsor')
+                    ->label('Sponsor')
                     ->boolean(),
                 Tables\Columns\TextColumn::make('category.name')
                     ->label('Category')

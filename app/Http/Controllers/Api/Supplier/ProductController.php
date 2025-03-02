@@ -6,13 +6,17 @@ use App\Models\Product;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Http\Resources\ProductResource;
+use App\Models\SubCategory;
+use App\Trait\CustomRespone; 
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 
 class ProductController extends Controller
 {
 
+    use CustomRespone;
     use AuthorizesRequests;
     /**
      * @OA\Get(
@@ -141,7 +145,7 @@ class ProductController extends Controller
     public function index()
     {
         // Retrieve parameters
-        $params = request()->only(['search', 'name', 'sku', 'description', 'stock_quantity', 'unit_selling_price', 'category_id', 'is_active']);
+        $params = request()->only(['search', 'name', 'sku', 'description', 'manzil_choice', 'stock_quantity', 'unit_selling_price', 'category_id', 'is_active']);
 
         $query = Product::where('supplier_user_id', Auth::id());
 
@@ -171,7 +175,7 @@ class ProductController extends Controller
             $query->where('is_active', $params['is_active'] == 'true' ? true : false);
         }
 
-        return ProductResource::collection($query->get());
+        return $this->json(200, true, 'Product list', ProductResource::collection($query->get()));
     }
     /**
      * @OA\Get(
@@ -221,7 +225,7 @@ class ProductController extends Controller
      */
     public function show(Product $product)
     {
-        return new ProductResource($product);
+        return $this->json(200, true, 'Show product', new ProductResource($product));
     }
 
     /**
@@ -286,19 +290,20 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'category_id' => 'required|exists:categories,id',
+            'sub_category_id' => 'required|exists:sub_categories,id',
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'referral_reward_value' => 'nullable|numeric|min:0',
             'referral_reward_type' => 'nullable|in:fixed,percentage',
-            'stock_quantity' => 'required|integer|min:0',
             'unit_selling_price' => 'required|numeric|min:0',
             'sku' => 'nullable|string|max:255|unique:products,sku',
             'is_active' => 'sometimes|boolean',
         ]);
         $validated['supplier_user_id'] = Auth::id();
+        $subCategory = SubCategory::find($validated['sub_category_id']);
+        $validated['category_id'] = $subCategory->category_id;
         $product = Product::create($validated);
-        return new ProductResource($product);
+        return $this->json(200, true, 'Product created successfully', new ProductResource($product));
     }
 
 
@@ -370,28 +375,22 @@ class ProductController extends Controller
      *     )
      * )
      */
+
+
     public function destroy(Product $product)
     {
         try {
             $product->delete();
-
-            return response()->json([
-                'message' => 'Product deleted successfully.',
-            ], 200);
+            return $this->json(200, true, 'Product deleted successfully.');
         } catch (QueryException $e) {
             if ($e->getCode() === '23000') {
-                return response()->json([
-                    'message' => 'Cannot delete this product because it is linked to other records.',
-                    'errors' => ['sql' => [$e->getMessage()]],
-                ], 422);
+                return $this->json(422, false, 'Cannot delete this product because it is linked to other records.', [], ['sql' => [$e->getMessage()]]);
             }
-
-            return response()->json([
-                'message' => 'An unexpected error occurred.',
-                'errors' => ['sql' => [$e->getMessage()]],
-            ], 500);
+            return $this->json(500, false, 'An unexpected database error occurred.', [], ['sql' => [$e->getMessage()]]);
         }
     }
+
+
 
     /**
      * @OA\Put(
@@ -465,14 +464,14 @@ class ProductController extends Controller
      */
     public function update(Request $request, Product $product)
     {
-        if (!$request->user()->can('update', $product)) {
-            return response()->json([
-                'message' => 'You do not have permission to update this product.',
-            ], 403);
-        }
+        // if (!$request->user()->can('update', $product)) {
+        //     throw ValidationException::withMessages([
+        //         'id' => ['You do not have permission to update this product.'],
+        //     ]); 
+        // }
 
         $validated = $request->validate([
-            'category_id' => 'sometimes|required|exists:categories,id',
+            'sub_category_id' => 'required|exists:categories,id',
             'name' => 'sometimes|required|string|max:255',
             'description' => 'nullable|string',
             'referral_reward_value' => 'nullable|numeric|min:0',
@@ -483,9 +482,10 @@ class ProductController extends Controller
             'is_active' => 'sometimes|boolean',
         ]);
 
+        $subCategory = SubCategory::find($validated['sub_category_id']);
+        $validated['category_id'] = $subCategory->category_id;
         $product->update($validated);
-
-        return new ProductResource($product);
+        return $this->json(200, true, 'Product update successfully!', new ProductResource($product));
     }
 
 
@@ -532,7 +532,7 @@ class ProductController extends Controller
     {
         $product->update(['is_active' => false]);
 
-        return response()->json(['message' => 'Product deactivated successfully'], 200);
+        return $this->json(200, true, 'Product deactivated successfully');
     }
 
 
@@ -544,7 +544,7 @@ class ProductController extends Controller
             'revenue' => $product->sales()->sum('total_price'),
         ];
 
-        return response()->json([
+        return $this->json(200, true, 'performace data', [
             'product' => new ProductResource($product),
             'performance' => $performanceData,
         ]);

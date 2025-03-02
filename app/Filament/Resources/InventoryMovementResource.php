@@ -44,13 +44,10 @@ class InventoryMovementResource extends Resource
                     ->preload()
                     ->searchable()
                     ->reactive()
-
                     ->afterStateUpdated(function (callable $set) {
                         // Reset the product field when supplier changes
                         $set('product_id', null);
                     }),
-
-                // Select product based on supplier
                 Select::make('product_id')
                     ->label('Product')
                     ->required()
@@ -111,16 +108,18 @@ class InventoryMovementResource extends Resource
                             ->searchable(),
                 TextColumn::make('quantity')
                     ->numeric()
-                    ->sortable(),
-                TextColumn::make('type')
-                    ->badge()
-                    ->color(fn($record) => $record->type === 'deduction' ? 'danger' : 'primary') // Conditional badge color
-
+                    ->sortable()
                     ->sortable(),
                 TextColumn::make('unit_price')
                     ->label('Unit Price')
                     ->numeric()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('type')
+                ->badge()
+                ->color(fn($record) => match ($record->type) {
+                    'addition' => 'gray',
+                    'deduction' => 'danger', 
+                }), 
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()

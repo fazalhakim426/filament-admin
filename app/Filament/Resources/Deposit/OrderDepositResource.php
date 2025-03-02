@@ -13,7 +13,7 @@ class OrderDepositResource extends Resource
 {
     protected static ?string $model = Deposit::class;
     protected static ?string $label = 'Order Deposit';
-    protected static ?string $navigationIcon = 'heroicon-o-currency-dollar';
+    protected static ?string $navigationIcon = 'heroicon-o-banknotes';
     protected static ?string $navigationGroup = 'Financial';
     protected static ?string $recordTitleAttribute = 'transaction_reference';
 

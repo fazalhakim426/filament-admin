@@ -10,6 +10,7 @@ use App\Models\Order;
 use App\Models\Deposit;
 use App\Models\InventoryMovement;
 use App\Models\Address;
+use App\Models\Review;
 
 class SupplierDetailSeeder extends Seeder
 {
@@ -17,7 +18,7 @@ class SupplierDetailSeeder extends Seeder
     {
         echo "Seeding Supplier Details...\n";
 
-        SupplierDetail::factory(10)->create()->each(function ($supplierDetail) {
+        SupplierDetail::factory(3)->create()->each(function ($supplierDetail) {
             echo "Created Supplier: {$supplierDetail->id}\n";
 
             // Assign role to supplier
@@ -25,23 +26,26 @@ class SupplierDetailSeeder extends Seeder
             echo "Assigned 'supplier' role to User: {$supplierDetail->user->id}\n";
 
             // Create products for the supplier
-            $products = Product::factory()->count(7)->make()->toArray();
+            $products = Product::factory()->count(3)->make()->toArray();
             $supplierDetail->user->products()->createMany($products);
             echo "Created 7 products for Supplier: {$supplierDetail->id}\n";
 
             // Add inventory movements for each product
             foreach ($supplierDetail->user->products as $product) {
-                InventoryMovement::factory()->create([
-                    'supplier_user_id' => $supplierDetail->user->id,
-                    'product_id' => $product->id,
-                    'type' => 'addition',
-                    'quantity' => mt_rand(50, 200),
-                    'unit_price' => mt_rand(50, 300),
-                ]);
+                foreach($product->items as $item){
+                    InventoryMovement::factory()->create([
+                        'supplier_user_id' => $supplierDetail->user->id, 
+                        'product_id' => $product->id,
+                        'type' => 'addition',
+                        'quantity' => mt_rand(50, 200),
+                        'unit_price' => mt_rand(50, 300),
+                    ]);
+                }
+
                 echo "Added inventory movement for Product: {$product->id}\n";
             }
             // Create customers
-            User::factory(3)->create()->each(function ($user) use ($supplierDetail) {
+            User::factory(1)->create()->each(function ($user) use ($supplierDetail) {
                 $user->assignRole('customer');
                 echo "Created Customer: {$user->id} and assigned 'customer' role\n";
 
@@ -57,7 +61,7 @@ class SupplierDetailSeeder extends Seeder
                 Order::factory(10)->create([
                     'customer_user_id' => $user->id,
                     'recipient_id' => $addresses[1]->id,
-                    'sender_id' => $addresses[0]->id, 
+                    'sender_id' => $addresses[0]->id,
                 ])->each(function ($order) use ($user, $supplierDetail, $quantity, $products) {
                     echo "Created Order: {$order->id} for Customer: {$user->id}\n";
 
@@ -69,7 +73,13 @@ class SupplierDetailSeeder extends Seeder
                                 'price' => $product->unit_selling_price,
                             ]
                         ]);
-                        
+
+                        Review::factory(fake()->numberBetween(3, 15))->create([
+                            'order_id' => $order->id,
+                            'product_id' => $product->id,
+                            'user_id' => $order->customer_user_id, // Ensure the review belongs to the correct user
+                        ]);
+
                         echo "Added Product: {$product->id} to Order: {$order->id}\n";
 
                         // Add inventory deduction
@@ -86,18 +96,9 @@ class SupplierDetailSeeder extends Seeder
                             ]);
                             echo "Recorded inventory deduction for Product: {$product->id} in Order: {$order->id}\n";
                         }
-                    }
-
-                    // Create deposits
-                    Deposit::factory()->create([
-                        'user_id' => $user->id,
-                        'order_id' => $order->id,
-                        'amount' => $products->sum('total_price'),
-                        'deposit_type' => 'debit',
-                        'description' => "Payment for {$order->warehouse_number}"
-                    ]);
-                    echo "Added Deposit for Order: {$order->id}, Amount: {$products->sum('total_price')}\n";
-                });
+                    } 
+                   
+                 });
             });
         });
 

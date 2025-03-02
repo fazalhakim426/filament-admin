@@ -13,15 +13,9 @@ class DepositFactory  extends Factory
 {
    
     public function definition(): array
-    {
-        $type = $this->faker->randomElement(['debit', 'credit']);
+    { 
         return [
-            'user_id' => User::factory(),
-            'order_id' => null, // Nullable for deposits not related to orders
-            'amount' => $this->faker->numberBetween(2, 2, 9)*10, // Random amount between 50 and 500
-            'transaction_type' => $type,
-            'deposit_type' => $type=='debit' ? 'wallet' : $this->faker->randomElement(['card', 'bank', 'admin']),
-            'transaction_reference' => $this->faker->unique()->uuid(),  
+             'transaction_reference' => $this->faker->unique()->uuid(),  
         ];
     }
 }

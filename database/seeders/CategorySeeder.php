@@ -134,7 +134,8 @@ class CategorySeeder extends Seeder
             foreach ($data['sub_categories'] as $subCategoryName) {
                 SubCategory::firstOrCreate([
                     'category_id' => $category->id,
-                    'name' => $subCategoryName
+                    'name' => $subCategoryName,
+                    'description' => 'description is null'
                 ]);
             }
         }

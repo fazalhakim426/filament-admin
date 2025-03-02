@@ -3,22 +3,89 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class OrderItem extends Model
 {
-    
+
     //timestamp false
     public $timestamps  = false;
+
     protected $fillable = [
-        'order_id', 'product_id', 'quantity', 'price', 'discount', 'total'
+        'order_id',
+        'product_id',
+        'quantity',
+        'price',
+        'discount',
+        'total'
     ];
-    function order() {
+    protected static function boot()
+    {
+        parent::boot();
+
+        OrderItem::created(function ($item) {
+            $order = $item->order;
+            $order->updateQuietly([
+                'total_price' => $order->items()->sum(DB::raw('price * quantity')),
+            ]);
+            $order->fresh();
+            if ($order->need_to_pay == 0) {
+                $order->updateQuietly([
+                    'payment_status' => 'pending',
+                ]);
+            } else {
+                $order->updateQuietly([
+                    'payment_status' => 'pending',
+                ]);
+            }
+
+            InventoryMovement::factory()->create([
+                'supplier_user_id' => $item->supplier_user_id,
+                'order_item_id' => $item->id,
+                'product_id' => $item->product_id,
+                'type' => 'deduction',
+                'quantity' => $item->quantity,
+                'unit_price' => $item->price,
+                'total_price' => $item->price * $item->quantity
+            ]);
+        });
+        OrderItem::updated(function ($item) {
+            $order = $item->order;
+            if ($item->quantity == 0) {
+                $item->delete();
+            }
+            $order->updateQuietly([
+                'total_price' => $order->items()->sum(DB::raw('price * quantity')),
+            ]);
+            $order->fresh();
+            if ($order->need_to_pay == 0) {
+                $order->updateQuietly([
+                    'payment_status' => 'pending',
+                ]);
+            } else {
+                $order->updateQuietly([
+                    'payment_status' => 'pending',
+                ]);
+            }
+            $item->inventoryMovement->update(['quantity' => $item->quantity]);
+        });
+    }
+
+
+    function order()
+    {
         return $this->belongsTo(Order::class);
     }
-    function product() {
+    function product()
+    {
         return $this->belongsTo(Product::class);
     }
-    function supplierUser() {
-        return $this->belongsTo(User::class,'supplier_user_id');
+    function supplierUser()
+    {
+        return $this->belongsTo(User::class, 'supplier_user_id');
+    }
+    function inventoryMovement()
+    {
+        return $this->hasOne(InventoryMovement::class);
     }
 }

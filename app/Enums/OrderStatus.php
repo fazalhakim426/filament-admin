@@ -8,12 +8,10 @@ use Filament\Support\Contracts\HasLabel;
 
 enum OrderStatus: string implements HasColor, HasIcon, HasLabel
 {
-    case New = 'new';
-    case Pending = 'pending';
+    //['new', 'processing','confirmed', 'shipped', 'delivered', 'canceled']
+    case New = 'new'; 
     case Processing = 'processing';
-    case Confirmed = 'confirmed';
-    case Paid = 'paid';
-    case Refunded = 'refunded';
+    case Confirmed = 'confirmed'; 
     case Shipped = 'shipped';
     case Delivered = 'delivered';
     case Canceled = 'canceled';
@@ -21,12 +19,9 @@ enum OrderStatus: string implements HasColor, HasIcon, HasLabel
     public function getLabel(): string
     {
         return match ($this) {
-            self::New => 'New',
-            self::Pending => 'Pending',
+            self::New => 'New', 
             self::Processing => 'Processing',
-            self::Confirmed => 'confirmed',
-            self::Paid => 'paid',
-            self::Refunded => 'Refunded',
+            self::Confirmed => 'confirmed', 
             self::Shipped => 'Shipped',
             self::Delivered => 'Delivered',
             self::Canceled => 'Canceled',
@@ -36,11 +31,10 @@ enum OrderStatus: string implements HasColor, HasIcon, HasLabel
     public function getColor(): string | array | null
     {
         return match ($this) {
-            self::New => 'info',
-            self::Pending => 'warning',
+            self::New => 'info', 
             self::Processing => 'warning',
-            self::Shipped, self::Delivered, self::Confirmed, self::Paid => 'success',
-            self::Canceled, self::Refunded => 'danger',
+            self::Shipped, self::Delivered, self::Confirmed  => 'success',
+            self::Canceled  => 'danger',
         };
     }
 
@@ -49,10 +43,10 @@ enum OrderStatus: string implements HasColor, HasIcon, HasLabel
         return match ($this) {
             self::New => 'heroicon-m-sparkles',
             self::Processing => 'heroicon-m-arrow-path',
-            self::Pending => 'heroicon-m-arrow-path',
+            // self::Pending => 'heroicon-m-arrow-path',
             self::Shipped => 'heroicon-m-truck',
-            self::Delivered, self::Delivered, self::Confirmed, self::Paid => 'heroicon-m-check-badge',
-            self::Canceled, self::Refunded => 'heroicon-m-x-circle',
+            self::Delivered, self::Delivered, self::Confirmed  => 'heroicon-m-check-badge',
+            self::Canceled => 'heroicon-m-x-circle',
         };
     }
 }

@@ -40,7 +40,7 @@ class SupplierResource extends Resource
     protected static ?string $navigationGroup = 'Shop';
     protected static ?string $title = 'Supplier';
 
-    protected static ?string $navigationIcon = 'heroicon-o-user-group';
+    protected static ?string $navigationIcon = 'heroicon-o-building-storefront';
     protected static ?int $navigationSort = 2;
     public static function getEloquentQuery(): Builder
     {
