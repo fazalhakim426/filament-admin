@@ -119,11 +119,6 @@ return new class extends Migration
             $table->foreignId('sub_category_id')->constrained('sub_categories');
             $table->string('name');
             $table->text('description')->nullable();
-            $table->decimal('referral_reward_value', 10, 2)->nullable()->default(0);
-            $table->enum('referral_reward_type', ['fixed', 'percentage'])->default('fixed');
-            $table->integer('stock_quantity')->default(0);
-            $table->decimal('unit_selling_price', 10, 2); //current selling price
-            $table->string('sku')->nullable();
             $table->boolean('is_active')->default(true);
             $table->boolean('manzil_choice')->default(false);
             $table->boolean('sponsor')->default(false);
@@ -131,19 +126,49 @@ return new class extends Migration
             $table->timestamps();
             $table->index(['id']);
         });
+        
+        Schema::create('product_variants', function (Blueprint $table) {
+            $table->id();
+            $table->text('description')->nullable();
+            $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
+            $table->decimal('unit_selling_price', 10, 2); // Price per variant
+            $table->integer('stock_quantity')->default(0);
+            $table->string('sku')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create('variant_options', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('product_variant_id')->constrained('product_variants')->onDelete('cascade');
+            $table->string('attribute_name'); // e.g., color, size, material
+            $table->string('attribute_value'); // e.g., Red, Small, Cotton
+            $table->timestamps();
+        });
+
         // Orders table
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
             $table->string('warehouse_number');
-            
             $table->foreignId('customer_user_id')->constrained('users');
+            $table->foreignId('supplier_user_id')->constrained('users');
             $table->foreignId('recipient_id')->constrained('addresses');
             $table->foreignId('sender_id')->constrained('addresses');
             $table->decimal('total_price', 10, 2)->nullable();
-            $table->string('order_status')->default('new'); //['new', 'processing','confirmed', 'shipped', 'delivered', 'canceled']
-            $table->string('payment_status')->default('unpaid'); //[ 'unpaid','pending', 'paid', 'refunded']
+            $table->decimal('shipping_cost', 10, 2)->nullable();
+            $table->decimal('items_cost', 10, 2)->nullable();
+            $table->string('order_status')->default('new');
+            //['new', 'processing','confirmed', 'shipped', 'delivered', 'canceled']
+            $table->string('payment_status')->default('unpaid');
+            //[ 'unpaid','pending', 'paid', 'refunded']
             $table->softDeletes();
             $table->timestamps();
+        });
+        Schema::create('order_trackings', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('order_id')->constrained()->onDelete('cascade');
+            $table->string('status'); // e.g., 'new', 'processing', 'shipped', etc.
+            $table->text('note')->nullable(); // Optional note for tracking updates
+            $table->timestamps(); // Created_at will act as the tracking timestamp
         });
         
         Schema::create('reviews', function (Blueprint $table) {
@@ -156,26 +181,29 @@ return new class extends Migration
             $table->index(['product_id', 'user_id']);
         });
 
-        Schema::create('order_items', function (Blueprint $table) {
+        Schema::create('order_items', function (Blueprint $table){
             $table->id();
             $table->foreignId('supplier_user_id')->constrained('users'); //for searching purpose the get saled items directly not through products and order.for future use.
             $table->foreignId('order_id')->constrained('orders');
             $table->foreignId('product_id')->constrained('products');
+            $table->foreignId('product_variant_id')->constrained('product_variants');
             $table->integer('quantity');
-            $table->decimal('price', 10, 2);
+            $table->decimal('price', 10, 2)->nullable()->default(0);
             $table->enum('order_status', ['pending', 'confirmed', 'canceled'])->default('pending');
         });
 
         Schema::create('inventory_movements', function (Blueprint $table) {
             $table->id();
             $table->foreignId('supplier_user_id')->constrained('users');
+            $table->foreignId('product_variant_id')->constrained('product_variants');
             $table->foreignId('product_id')->constrained('products');
             $table->foreignId('order_item_id')->nullable()->constrained('order_items');
             $table->enum('type', ['addition', 'deduction']);
             $table->integer('quantity');
             $table->decimal('unit_price', 10, 2);
             $table->decimal('total_price', 10, 2);
-            $table->string('description');
+            $table->string('description')->nullable();
+            $table->enum('movement_type', ['purchase', 'sale', 'return', 'adjustment']);  // Type of movement
             $table->timestamps();
         });
 
@@ -256,6 +284,8 @@ return new class extends Migration
         Schema::dropIfExists('reviews');
         Schema::dropIfExists('orders');
         Schema::dropIfExists('addresses'); 
+        Schema::dropIfExists('variant_options');
+        Schema::dropIfExists('product_variants');
         Schema::dropIfExists('products');
         Schema::dropIfExists('supplier_details');
         Schema::dropIfExists('user_profiles');

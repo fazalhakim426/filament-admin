@@ -52,14 +52,14 @@ class Product extends Model
     // {
     //     return Attribute::set(fn($value) => collect($value)->map(fn($file) => ['url' => $file]));
     // }
-    public function images(): MorphMany
-    {
-        return $this->morphMany(Image::class, 'imageable');
-    }
+ 
     function reviews() {
         return $this->hasMany(Review::class);
     }
     function inventoryMovements() {
         return $this->hasMany(InventoryMovement::class);
+    }
+    function productVariants() {
+        return $this->hasMany(ProductVariant::class);
     }
 }

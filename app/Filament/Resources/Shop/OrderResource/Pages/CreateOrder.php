@@ -38,9 +38,9 @@ class CreateOrder extends CreateRecord
     {
         /** @var Order $order */ 
         $order = ($this->record);
-        $order->updateQuietly([
-            // 'total_price' => $this->items()->sum(DB::raw('price * quantity')),
-        ]);
+        // $order->updateQuietly([
+        //     'total_price' => $this->items()->sum(DB::raw('price * quantity')),
+        // ]);
         // /** @var User $user */
         // $user = auth()->user();
 

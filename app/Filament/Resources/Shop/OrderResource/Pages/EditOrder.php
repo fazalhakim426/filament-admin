@@ -22,8 +22,8 @@ class EditOrder extends EditRecord
     protected function afterSave(): void
     { 
         $order = ($this->record);
-        $order->updateQuietly([
-            'total_price' => $order->items()->sum(DB::raw('price * quantity')),
+        $order->update([
+            'items_cost' => $order->items()->sum(DB::raw('price * quantity')),
         ]);
     }
 }

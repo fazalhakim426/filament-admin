@@ -12,6 +12,8 @@ use App\Http\Resources\UserResource;
 use App\Models\SupplierDetail;
 use App\Trait\CustomRespone;
 use Illuminate\Auth\Events\PasswordReset;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
@@ -237,7 +239,7 @@ class AuthController extends Controller
                     return $this->json(
                         200,
                         true,
-                        'Account is inactive. Please contact support.',
+                        'Login successful.',
                         [
                             'token' => $token,
                             'user' => new UserResource($user)
@@ -293,59 +295,32 @@ class AuthController extends Controller
      * )
      */
 
-    public function forgotPassword(Request $request)
-    {
-        $request->validate([
-            'email' => 'required|email|exists:users,email',
-        ]);
-
-        $status = Password::sendResetLink(
-            $request->only('email')
-        );
-        if ($status === Password::RESET_LINK_SENT) {
-            return $this->json(200, true, 'Password reset link sent!');
-        }
-        return $this->json(500, false, 'Unable to send password reset link.');
-    }
-
-    /**
-     * @OA\Post(
-     *     path="/reset-password",
-     *     summary="Reset user password",
-     *     description="Reset the user's password using the provided token.",
-     *     tags={"Authentication"},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             @OA\Property(property="email", type="string", example="user@example.com"),
-     *             @OA\Property(property="token", type="string", example="reset-token"),
-     *             @OA\Property(property="password", type="string", example="newpassword123"),
-     *             @OA\Property(property="password_confirmation", type="string", example="newpassword123")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Password reset successfully.",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="Password has been successfully reset.")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=422,
-     *         description="Validation error.",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="errors", type="object")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=400,
-     *         description="Invalid or expired token.",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="error", type="string", example="The provided token is invalid or expired.")
-     *         )
-     *     )
-     * )
-     */
+     
+     public function forgotPassword(Request $request)
+     {
+         $request->validate([
+             'email' => 'required|email|exists:users,email',
+         ]);
+     
+         // Generate a 5-digit random code
+         $resetCode = random_int(10000, 99999);
+     
+         // Store code in password_resets table
+         DB::table('password_resets')->updateOrInsert(
+             ['email' => $request->email],
+             ['token' => Hash::make($resetCode), 'created_at' => now()]
+         );
+     
+         // Send code via email
+         Mail::raw("Your password reset code is: $resetCode", function ($message) use ($request) {
+             $message->to($request->email)
+                 ->subject('Password Reset Code');
+         });
+     
+         return $this->json(200, true, 'Password reset code sent!');
+     }
+     
+ 
     public function resetPassword(Request $request)
     {
         // Validate the incoming request

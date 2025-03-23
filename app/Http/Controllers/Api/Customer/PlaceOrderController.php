@@ -9,6 +9,7 @@ use App\Models\Address;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Trait\CustomRespone;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -23,20 +24,113 @@ class PlaceOrderController extends Controller
     function index()
     {
         $user = Auth::user();
-        return OrderResource::collection($user->orderAsCustomer->load('items.product'));
+        return OrderResource::collection($user->orderAsCustomer->load([
+            'items.productVariant.product',
+            'items.productVariant.variantOptions',
+            'sender',
+            'recipient',
+            'deposits'
+        ]));
     }
     function show(Order $order)
     {
-        return new OrderResource($order->load('items.product', 'customerUser', 'deposits'));
+        return new OrderResource($order->load([
+            'items.productVariant.product',
+            'items.productVariant.variantOptions',
+            'sender',
+            'recipient',
+            'deposits'
+        ]));
     }
+    // public function store(Request $request)
+    // {
+    //     $request->validate([
+    //         'items' => 'required|array',
+    //         'items.*.product_variant_id' => 'required|exists:product_variants,id',
+    //         'items.*.quantity' => 'required|integer|min:1',
+    //         'sender_id' => 'nullable|exists:addresses,id',
+    //         'recipient_id' => 'nullable|exists:addresses,id',
+    //         'sender' => 'nullable|array',
+    //         'recipient' => 'nullable|array',
+    //     ], [], [
+    //         'sender_id' => 'sender address ID',
+    //         'recipient_id' => 'recipient address ID',
+    //         'sender' => 'sender address',
+    //         'recipient' => 'recipient address',
+    //     ]);
+
+    //     if (!$request->filled('sender_id') && !$request->filled('sender')) {
+    //         throw ValidationException::withMessages([
+    //             'sender_id' => ['Either sender_id or sender address details must be provided.'],
+    //         ]);
+    //     }
+
+    //     if (!$request->filled('recipient_id') && !$request->filled('recipient')) {
+    //         throw ValidationException::withMessages([
+    //             'recipient_id' => ['Either recipient_id or recipient address details must be provided.'],
+    //         ]);
+    //     }
+
+    //     DB::beginTransaction();
+
+    //     try {
+    //         $senderId = $request->sender_id;
+    //         $recipientId = $request->recipient_id;
+
+    //         if (!$senderId && $request->filled('sender')) {
+    //             $sender = Address::create(array_merge($request->sender, ['user_id' => auth()->id()]));
+    //             $senderId = $sender->id;
+    //         }
+
+    //         if (!$recipientId && $request->filled('recipient')){
+    //             $recipient = Address::create(array_merge($request->recipient, ['user_id' => auth()->id()]));
+    //             $recipientId = $recipient->id;
+    //         }
+
+    //         $order = Order::create([
+    //             'warehouse_number' => $request->warehouse_number,
+    //             'total_price' => '-1',
+    //             'items_cost' => '-1',
+    //             'shipping_cost' => '-1',
+    //             'customer_user_id' => auth()->id(),
+    //             'sender_id' => $senderId,
+    //             'recipient_id' => $recipientId,
+    //             'order_status' => 'new',
+    //             'payment_status' => 'unpaid'
+    //         ]);
+
+    //         foreach ($request->items as $item) {
+    //             $variant = ProductVariant::find($item['product_variant_id']);
+    //             // if ($variant->stock_quantity < $item['quantity']) {
+    //             //     return $this->rollbackWithResponse('Product variant out of stock', 422);
+    //             // }
+
+    //             $order->items()->create([
+    //                 'product_variant_id' => $variant->id,
+    //                 'product_id' => $variant->product_id,
+    //                 'quantity' => $item['quantity'],
+    //                 'price' => $variant->unit_selling_price,
+    //                 'supplier_user_id' => $variant->product->supplier_user_id,
+    //                 'order_status' => 'pending'
+    //             ]);
+    //         }
+
+    //         DB::commit();
+    //         $order->refresh();
+
+    //         return $this->json(200, true, 'Order created successfully', new OrderResource($order->load(['items.productVariant.product','items.productVariant.variantOptions', 'sender', 'recipient','deposits'])));
+    //     } catch (\Exception $e) {
+    //         DB::rollBack();
+    //         return $this->json(500, false, 'Failed to create order: ' . $e->getMessage(), null);
+    //     }
+    // }
     public function store(Request $request)
-    {
+    { 
+
         $request->validate([
-            // 'total_price' => 'required|numeric', 
             'items' => 'required|array',
-            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.product_variant_id' => 'required|exists:product_variants,id',
             'items.*.quantity' => 'required|integer|min:1',
-            // 'items.*.price' => 'required|numeric',
             'sender_id' => 'nullable|exists:addresses,id',
             'recipient_id' => 'nullable|exists:addresses,id',
             'sender' => 'nullable|array',
@@ -47,7 +141,6 @@ class PlaceOrderController extends Controller
             'sender' => 'sender address',
             'recipient' => 'recipient address',
         ]);
-
         if (!$request->filled('sender_id') && !$request->filled('sender')) {
             throw ValidationException::withMessages([
                 'sender_id' => ['Either sender_id or sender address details must be provided.'],
@@ -59,8 +152,8 @@ class PlaceOrderController extends Controller
                 'recipient_id' => ['Either recipient_id or recipient address details must be provided.'],
             ]);
         }
-        DB::beginTransaction();
 
+        DB::beginTransaction();
         try {
             $senderId = $request->sender_id;
             $recipientId = $request->recipient_id;
@@ -75,76 +168,93 @@ class PlaceOrderController extends Controller
                 $recipientId = $recipient->id;
             }
 
-            $order = Order::create([
-                'warehouse_number' => $request->warehouse_number,
-                'total_price' => '-1',
-                'customer_user_id' => auth()->id(),
-                'sender_id' => $senderId,
-                'recipient_id' => $recipientId,
-                'order_status' => 'new',
-                'payment_status' => 'unpaid'
-            ]);
-            foreach ($request->items as $item) {
-                $product = Product::find($item['product_id']);
+            $itemsGroupedBySupplier = collect($request->items)->groupBy(function ($item) {
+                return ProductVariant::find($item['product_variant_id'])->product->supplier_user_id;
+            });
 
-                if ($product->stock_quantity < $item['quantity']) {
-                    return $this->rollbackWithResponse('Product out of stock', 422);
-                }
-                $order->items()->create([
-                    'product_id' => $product->id,
-                    'quantity' => $item['quantity'],
-                    'price' => $product->unit_selling_price,
-                    'supplier_user_id' => $product->supplier_user_id,
-                    'order_status' => 'pending'
+            $orders = [];
+            foreach ($itemsGroupedBySupplier as $supplierId => $items) {
+                $order = Order::create([
+                    'warehouse_number' => $request->warehouse_number, 
+                    'customer_user_id' => auth()->id(),
+                    'supplier_user_id' => $supplierId,
+                    'sender_id' => $senderId,
+                    'shipping_cost' => '10',
+                    'recipient_id' => $recipientId,
+                    'order_status' => 'new',
+                    'payment_status' => 'unpaid'
                 ]);
+
+                foreach ($items as $item) {
+                    $variant = ProductVariant::find($item['product_variant_id']);
+                    $order->items()->create([
+                        'product_variant_id' => $variant->id,
+                        'product_id' => $variant->product_id,
+                        'quantity' => $item['quantity'],
+                        'price' => $variant->unit_selling_price,
+                        'supplier_user_id' => $variant->product->supplier_user_id,
+                        'order_status' => 'pending'
+                    ]);
+                }
+                $order->refresh();
+
+                $orders[] = $order;
             }
+
             DB::commit();
-            $order->refresh();
-            return $this->json(200, true, 'Order created successfully', new OrderResource($order->load(['items', 'sender', 'recipient'])));
+            return $this->json(200, true, 'Orders created successfully', OrderResource::collection($orders));
         } catch (\Exception $e) {
             DB::rollBack();
-            return $this->json(500, false, 'Failed to create order:' . $e->getMessage(), null,);
+            return $this->json(500, false, 'Failed to create orders: ' . $e->getMessage(), null);
         }
     }
-    public function updateProductQantity(Request $request, Order $order)
+
+    public function updateProductQuantity(Request $request, Order $order)
     {
         $request->validate([
             'items' => 'required|array',
-            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.product_variant_id' => 'required|exists:product_variants,id',
             'items.*.quantity' => 'required|integer|min:1',
         ]);
 
         DB::beginTransaction();
 
         try {
-            foreach ($request->items as $itemRequest) { 
-                $orderItem = OrderItem::where('product_id', $itemRequest['product_id'])->where('order_id', $order->id)->first();
+            foreach ($request->items as $itemRequest) {
+                $orderItem = OrderItem::where('product_variant_id', $itemRequest['product_variant_id'])
+                    ->where('order_id', $order->id)
+                    ->first();
 
                 if ($orderItem) {
-                    $product = $orderItem->product;
-                    if ($itemRequest['quantity'] < 0 && ($itemRequest['quantity'] * (-1)) > $orderItem->quantity) {
-                        return $this->rollbackWithResponse('quantity exceed. Not enough items found', 422);
-                    }
-                    if ($product->stock_quantity < $itemRequest['quantity']) {
-                        return $this->rollbackWithResponse('Product out of stock', 422);
-                    }
-                    $orderItem->update([
-                        'quantity' =>$itemRequest['quantity']
-                    ]);
-                } else {
-                    $product = Product::find($itemRequest['product_id']);
-                    if (!$product) {
-                        return $this->rollbackWithResponse('Product not found', 404);
+                    $variant = $orderItem->productVariant;
+
+                    // Check if the quantity is valid
+                    if ($itemRequest['quantity'] < 0 && abs($itemRequest['quantity']) > $orderItem->quantity) {
+                        return $this->rollbackWithResponse('Quantity exceed. Not enough items found', 422);
                     }
 
-                    if ($product->stock_quantity < $itemRequest['quantity']) {
-                        return $this->rollbackWithResponse('Product out of stock.', 422);
+                    if ($variant->stock_quantity < $itemRequest['quantity']) {
+                        return $this->rollbackWithResponse('Product variant out of stock', 422);
                     }
+
+                    $orderItem->update([
+                        'quantity' => $itemRequest['quantity']
+                    ]);
+                } else {
+                    $variant = ProductVariant::find($itemRequest['product_variant_id']);
+                    if (!$variant) {
+                        return $this->rollbackWithResponse('Product variant not found', 404);
+                    }
+
+                    if ($variant->stock_quantity < $itemRequest['quantity']) {
+                        return $this->rollbackWithResponse('Product variant out of stock.', 422);
+                    }
+
                     $order->items()->create([
-                        'product_id' => $product->id,
+                        'product_variant_id' => $variant->id,
                         'quantity' => $itemRequest['quantity'],
-                        'price' => $product->unit_selling_price,
-                        'supplier_user_id' => $product->supplier_user_id,
+                        'price' => $variant->unit_selling_price,
+                        'supplier_user_id' => $variant->product->supplier_user_id, // Get supplier from the main product
                         'order_status' => 'pending',
                     ]);
                 }
@@ -152,14 +262,14 @@ class PlaceOrderController extends Controller
 
             DB::commit();
             $order->refresh();
-            return $this->json(200, true, 'Order updated successfully', new OrderResource($order->load(['items', 'sender', 'recipient'])));
+            return $this->json(200, true, 'Order updated successfully', new OrderResource($order->load(['items.productVariant.product', 'items.productVariant.variantOptions', 'sender', 'recipient', 'deposits'])));
         } catch (\Exception $e) {
             return $this->rollbackWithResponse('Failed: ' . $e->getMessage(), 500);
         }
     }
+
     function removeItems(OrderItem $orderItem)
     {
-        dd($orderItem);
         $orderItem->delete();
         return $this->json(200, true, 'Order item removed successfully');
         try {

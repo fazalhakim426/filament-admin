@@ -14,6 +14,8 @@ class OrderItem extends Model
     protected $fillable = [
         'order_id',
         'product_id',
+        'supplier_user_id',
+        'product_variant_id',
         'quantity',
         'price',
         'discount',
@@ -25,24 +27,25 @@ class OrderItem extends Model
 
         OrderItem::created(function ($item) {
             $order = $item->order;
-            $order->updateQuietly([
-                'total_price' => $order->items()->sum(DB::raw('price * quantity')),
-            ]);
+            $order->update([
+                'items_cost' => $order->items()->sum(DB::raw('price * quantity')),
+            ]); 
             $order->fresh();
             if ($order->need_to_pay == 0) {
-                $order->updateQuietly([
+                $order->update([
                     'payment_status' => 'pending',
                 ]);
             } else {
-                $order->updateQuietly([
+                $order->update([
                     'payment_status' => 'pending',
                 ]);
             }
 
-            InventoryMovement::factory()->create([
+            InventoryMovement::create([
                 'supplier_user_id' => $item->supplier_user_id,
                 'order_item_id' => $item->id,
                 'product_id' => $item->product_id,
+                'product_variant_id' => $item->product_variant_id,
                 'type' => 'deduction',
                 'quantity' => $item->quantity,
                 'unit_price' => $item->price,
@@ -54,16 +57,16 @@ class OrderItem extends Model
             if ($item->quantity == 0) {
                 $item->delete();
             }
-            $order->updateQuietly([
-                'total_price' => $order->items()->sum(DB::raw('price * quantity')),
+            $order->update([
+                'items_cost' => $order->items()->sum(DB::raw('price * quantity')),
             ]);
             $order->fresh();
             if ($order->need_to_pay == 0) {
-                $order->updateQuietly([
+                $order->update([
                     'payment_status' => 'pending',
                 ]);
             } else {
-                $order->updateQuietly([
+                $order->update([
                     'payment_status' => 'pending',
                 ]);
             }
@@ -79,6 +82,10 @@ class OrderItem extends Model
     function product()
     {
         return $this->belongsTo(Product::class);
+    }
+    function productVariant()
+    {
+        return $this->belongsTo(ProductVariant::class);
     }
     function supplierUser()
     {

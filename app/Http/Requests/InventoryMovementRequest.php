@@ -22,7 +22,7 @@ class InventoryMovementRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'product_id' => 'required|exists:products,id',
+            'product_variant_id' => 'required|exists:product_variants,id',
             'quantity' => 'required|integer|min:1',
             'unit_price' => 'required|numeric|min:0',
             'description' => 'required|string|max:255',

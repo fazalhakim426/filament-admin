@@ -2,14 +2,14 @@
 
 namespace App\Filament\Resources\Shop;
 
-use App\Filament\Resources\Shop\OrderResource\Pages; 
-use App\Filament\Resources\Shop\OrderResource\Widgets\OrderStats; 
+use App\Filament\Resources\Shop\OrderResource\Pages;
+use App\Filament\Resources\Shop\OrderResource\Widgets\OrderStats;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Notifications\Notification;
-use Filament\Forms\Components\Repeater; 
+use Filament\Forms\Components\Repeater;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Filament\Tables\Actions\Action; 
+use Filament\Tables\Actions\Action;
 use Filament\Resources\Resource;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
@@ -20,10 +20,11 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Support\Carbon; 
-use Filament\Forms\Components\Placeholder; 
+use Illuminate\Support\Carbon;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+
 class OrderResource extends Resource
 {
     protected static ?string $model = Order::class;
@@ -89,11 +90,15 @@ class OrderResource extends Resource
                 Tables\Columns\TextColumn::make('warehouse_number')
                     ->searchable()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('supplierUser.name')
+                    ->searchable()
+                    ->sortable()
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('customerUser.name')
                     ->searchable()
                     ->sortable()
                     ->toggleable(),
-                    Tables\Columns\TextColumn::make('payment_status')
+                Tables\Columns\TextColumn::make('payment_status')
                     ->badge()
                     ->color(fn($record) => match ($record->payment_status) {
                         'unpaid' => 'gray',
@@ -101,7 +106,7 @@ class OrderResource extends Resource
                         'refunded' => 'danger',
                         default => 'gray',
                     }),
-                
+
                 Tables\Columns\TextColumn::make('order_status')
                     ->badge()
                     ->color(fn($record) => match ($record->order_status) {
@@ -112,13 +117,19 @@ class OrderResource extends Resource
                         'delivered' => 'success',
                         'canceled' => 'danger',
                         default => 'gray',
-                    }), 
+                    }),
                 Tables\Columns\TextColumn::make('total_price')
-                    ->money('PKR'),
-                    
+                    ->formatStateUsing(
+                        fn($record) =>
+                        "PKR " . number_format($record->total_price, 2) .
+                            " (Items: PKR " . number_format($record->items_cost, 2) .
+                            " + Shipping: PKR " . number_format($record->shipping_cost, 2) . ")"
+                    )
+                    ->sortable(),
+
                 Tables\Columns\TextColumn::make('total_price')
                     ->money('PKR')
-                    ->label('Shipping Cost')
+                    ->label('Total Price')
                     ->searchable()
                     ->sortable()
                     ->toggleable()
@@ -127,10 +138,9 @@ class OrderResource extends Resource
                             ->money('pkr'),
                     ]),
             ])
-            ->defaultSort('created_at','DESC')
+            ->defaultSort('created_at', 'DESC')
             ->filters([
                 Tables\Filters\TrashedFilter::make(),
-
                 Tables\Filters\Filter::make('created_at')
                     ->form([
                         Forms\Components\DatePicker::make('created_from')
@@ -171,29 +181,29 @@ class OrderResource extends Resource
                         Placeholder::make('balance')
                             ->label('User Balance')
                             ->content(fn(Order $record) => 'PKR ' . number_format($record->customerUser->balance ?? 0, 2)),
-                 
-                
+
+
                         // Show Total Paid and Need to Pay
                         Placeholder::make('paid')
                             ->label('Total Paid')
                             ->content(fn(Order $record) => 'PKR ' . number_format($record->paid, 2)),
-                
+
                         Placeholder::make('need_to_pay')
                             ->label('Amount Due')
                             ->content(fn(Order $record) => 'PKR ' . number_format($record->need_to_pay, 2)),
-                
+
                         // Payment Input
                         TextInput::make('amount')
                             ->label('Amount to Pay')
                             ->numeric()
                             ->default(fn(Order $record) => $record->need_to_pay)
                             ->required(),
-                
+
                         Textarea::make('description')->label('Description'),
                     ])
                     ->action(fn(array $data, Order $record) => self::handlePayment($record, $data['amount'], $data['description']))
-                    ->visible(fn(Order $record) => $record->need_to_pay > 0 && $record->order_status != OrderStatus::Canceled->value ),
-                
+                    ->visible(fn(Order $record) => $record->need_to_pay > 0 && $record->order_status != OrderStatus::Canceled->value),
+
 
 
 
@@ -203,31 +213,31 @@ class OrderResource extends Resource
                     ->icon('heroicon-o-arrow-uturn-left')
                     ->form([
                         Placeholder::make('balance')
-                        ->label('User Balance')
-                        ->content(fn(Order $record) => 'PKR ' . number_format($record->customerUser->balance ?? 0, 2)),
+                            ->label('User Balance')
+                            ->content(fn(Order $record) => 'PKR ' . number_format($record->customerUser->balance ?? 0, 2)),
                         // Show Total Paid and Need to Pay
                         Placeholder::make('paid')
                             ->label('Total Paid')
                             ->content(fn(Order $record) => 'PKR ' . number_format($record->paid, 2)),
-                
+
                         Placeholder::make('need_to_pay')
                             ->label('Amount Due')
                             ->content(fn(Order $record) => 'PKR ' . number_format($record->need_to_pay, 2)),
-                
+
 
                         Forms\Components\TextInput::make('amount')
                             ->label('Amount to Refund')
-                            ->numeric()                            
+                            ->numeric()
                             ->default(fn(Order $record) => $record->paid) // Prefill with need_to_pay
                             ->required(),
                         Forms\Components\Textarea::make('description')->label('Reason for Refund'),
                     ])
                     ->action(fn(array $data, Order $record) => self::handleRefund($record, $data['amount'], $data['description']))
-                    ->visible(fn(Order $record) => $record->paid > 0 && !in_array($record->order_status , [OrderStatus::Confirmed->value, OrderStatus::Shipped->value, OrderStatus::Delivered->value] )),
+                    ->visible(fn(Order $record) => $record->paid > 0 && !in_array($record->order_status, [OrderStatus::Confirmed->value, OrderStatus::Shipped->value, OrderStatus::Delivered->value])),
 
-            
-                    Tables\Actions\EditAction::make(), 
-                    ])
+
+                Tables\Actions\EditAction::make(),
+            ])
             ->groupedBulkActions([
                 Tables\Actions\DeleteBulkAction::make()
                     ->action(function () {
@@ -385,10 +395,10 @@ class OrderResource extends Resource
             //         ->modalWidth('lg');
             // })
 
-                // Forms\Components\ToggleButtons::make('payment_status')
-                //     ->inline()
-                //     ->options(PaymentStatus::class)
-                //     ->required(),
+            // Forms\Components\ToggleButtons::make('payment_status')
+            //     ->inline()
+            //     ->options(PaymentStatus::class)
+            //     ->required(),
             Forms\Components\ToggleButtons::make('order_status')
                 ->inline()
                 ->options(OrderStatus::class)
@@ -419,8 +429,7 @@ class OrderResource extends Resource
                     ->required()
                     ->reactive()
                     ->afterStateUpdated(function ($state, Forms\Set $set) {
-                        $product = Product::find($state);
-                        // Ensure product exists and has a supplier
+                        $product = Product::find($state); 
                         if ($product && $product->supplier_user_id) {
                             $set('price', $product->unit_selling_price ?? 0);
                             $set('supplier_user_id', $product->supplier_user_id); // Auto-set supplier ID
@@ -470,30 +479,30 @@ class OrderResource extends Resource
     }
     protected static function handlePayment(Order $order, $amount, $description = null)
     {
-        $order->update(['payment_status'=>'paid']);
-        Deposit::create([ 
+        $order->update(['payment_status' => 'paid']);
+        Deposit::create([
             'user_id' => $order->customer_user_id,
             'order_id' => $order->id,
             'amount' => $amount,
             'transaction_type' => 'debit',
             'deposit_type' => 'wallet',
             'currency' => 'PKR',
-            'provider' => 'Account Balance', 
+            'provider' => 'Account Balance',
             'description' => $description,
         ]);
     }
 
     protected static function handleRefund(Order $order, $amount, $description = null)
     {
-        
-        $order->update(['payment_status'=>'refunded']);
-        Deposit::create([ 
+
+        $order->update(['payment_status' => 'refunded']);
+        Deposit::create([
             'user_id' => $order->customer_user_id,
             'order_id' => $order->id,
             'amount' => $amount,
             'transaction_type' => 'credit', // Debit means refunded
             'deposit_type' => 'order_refund',
-            'currency' => 'PKR', 
+            'currency' => 'PKR',
             'description' => $description,
         ]);
     }

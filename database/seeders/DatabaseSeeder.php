@@ -55,8 +55,8 @@ class DatabaseSeeder extends Seeder
         ]);
         $order = Order::all();
         foreach ($order as $order) {
-            $order->updateQuietly([
-                'total_price' => $order->items()->sum(DB::raw('price * quantity')),
+            $order->update([
+                'items_cost' => $order->items()->sum(DB::raw('price * quantity')),
             ]);
             if ($order->order_status != OrderStatus::New->value) {
                 Deposit::factory()->create([

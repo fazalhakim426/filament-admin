@@ -20,6 +20,8 @@ class Order extends Model
         'recipient_id',
         'sender_id',
         'total_price',
+        'items_cost',
+        'shipping_cost',
         'order_status',
         'created_at',
         'updated_at',
@@ -46,33 +48,17 @@ class Order extends Model
     {
         return $this->hasMany(OrderItem::class, 'order_id');
     }
+    function trackings()
+    {
+        return $this->hasMany(OrderTracking::class, 'order_id');
+    }
 
 
     protected static function boot()
     {
         parent::boot();
 
-        static::creating(function ($order) {
-            $order->warehouse_number = self::generateWarehouseNumber();
-        });
-        static::updating(function ($order) {
-            if ($order->isDirty('order_status')) {
-                $originalStatus = $order->getOriginal('order_status');
-                $newStatus = $order->order_status;
-
-                Log::info("Order status changed from $originalStatus to $newStatus");
-
-                if ($newStatus === 'confirmed' && $originalStatus !== 'confirmed') {
-                    $order->deductInventory();
-                }
-                if (in_array($newStatus, ['canceled', 'refunded']) && !in_array($originalStatus, ['canceled', 'refunded'])) {
-                    $order->addInventory();
-                }
-            }
-            $order->updateQuietly([
-                'total_price' => $order->items()->sum(DB::raw('price * quantity')),
-            ]);
-        });
+        static::updating(function ($order) {});
     }
     public function deductInventory()
     {
@@ -120,7 +106,7 @@ class Order extends Model
 
 
 
-    private static function generateWarehouseNumber()
+    function generateWarehouseNumber()
     {
         // Generate a 13-digit number using a combination of timestamp and random digits
         $timestamp = now()->format('md'); // 8 digits: Current date (YYYYMMDD)
@@ -178,5 +164,11 @@ class Order extends Model
         }
 
         return $this->order_status;
+    }
+    function reCalculate()
+    {
+        $this->items_cost = $this->items()->sum(DB::raw('price * quantity'));
+        $this->total_price = $this->shipping_cost + $this->items_cost;
+        $this->save();
     }
 }

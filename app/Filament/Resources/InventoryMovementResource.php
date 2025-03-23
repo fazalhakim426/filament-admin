@@ -29,40 +29,44 @@ class InventoryMovementResource extends Resource
     {
         return $form
             ->schema([
-
                 \Filament\Forms\Components\View::make('forms.inventory-guide')
-                    ->columnSpan('full'), // Span across the full width of the form
-
+                    ->columnSpan('full'),
                 Select::make('supplier_user_id')
                     ->label('Supplier')
                     ->relationship('supplierUser', 'name', function (Builder $query) {
-                        $query->whereHas('roles', function ($query) {
-                            $query->where('name', 'Supplier'); // Assuming your roles are stored by name
-                        });
+                        $query->whereHas('roles', fn($query) => $query->where('name', 'Supplier'));
                     })
                     ->required()
                     ->preload()
                     ->searchable()
                     ->reactive()
-                    ->afterStateUpdated(function (callable $set) {
-                        // Reset the product field when supplier changes
-                        $set('product_id', null);
-                    }),
+                    ->afterStateUpdated(fn(callable $set) => $set('product_id', null)), // Reset product when supplier changes
+    
+                // Product Selection
                 Select::make('product_id')
                     ->label('Product')
                     ->required()
-                    ->options(function (callable $get) {
-                        $supplierId = $get('supplier_user_id');
-                        if ($supplierId) {
-                            // Fetch products related to the selected supplier
-                            return \App\Models\Product::where('supplier_user_id', $supplierId)
-                                ->pluck('name', 'id');
-                        }
-                        return []; // Return empty options if no supplier selected
-                    })
+                    ->options(fn(callable $get) => 
+                        $get('supplier_user_id') 
+                            ? \App\Models\Product::where('supplier_user_id', $get('supplier_user_id'))->pluck('name', 'id') 
+                            : []
+                    )
+                    ->searchable()
+                    ->preload()
+                    ->reactive()
+                    ->afterStateUpdated(fn(callable $set) => $set('product_variant_id', null)), // Reset variant when product changes
+     
+                Select::make('product_variant_id')
+                    ->label('Product Variant')
+                    ->required()
+                    ->options(fn(callable $get) => 
+                        $get('product_id') 
+                            ? \App\Models\ProductVariant::where('product_id', $get('product_id'))->pluck('sku', 'id') 
+                            : []
+                    )
                     ->searchable()
                     ->preload(),
-
+    
                 // Transaction Type
                 Select::make('type')
                     ->label('Transaction Type')
@@ -71,18 +75,20 @@ class InventoryMovementResource extends Resource
                         'addition' => 'Addition',
                         'deduction' => 'Deduction',
                     ])
-                    ->default('addition'), 
+                    ->default('addition'),
+    
                 // Quantity
                 TextInput::make('quantity')
                     ->label('Quantity')
                     ->required()
                     ->numeric()
                     ->minValue(1),
-                // Quantity
+    
+                // Description
                 TextInput::make('description')
                     ->label('Description')
                     ->required(),
-
+    
                 // Unit Cost Price
                 TextInput::make('unit_price')
                     ->label('Unit Cost Price')
@@ -91,6 +97,7 @@ class InventoryMovementResource extends Resource
                     ->numeric(),
             ]);
     }
+    
 
 
     public static function table(Table $table): Table

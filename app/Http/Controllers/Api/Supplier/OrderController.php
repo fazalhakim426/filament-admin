@@ -2,9 +2,8 @@
 
 namespace App\Http\Controllers\Api\Supplier;
 
-use App\Http\Controllers\Controller;
-use App\Http\Resources\OrderItemResource;
-use App\Http\Resources\OrderResource;
+use App\Http\Controllers\Controller; 
+use App\Http\Resources\OrderResource; 
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Trait\CustomRespone;
@@ -13,20 +12,25 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Barryvdh\DomPDF\Facade\Pdf;
 
+ 
+
 class OrderController extends Controller
 {
     use CustomRespone;
-    // List all orders
-    public function index($paid = null)
+
+    public function index()
     {
         $user = Auth::user();
+        $orders = Order::where('supplier_user_id', $user->id)->get();
+        return $this->json(200, true, 'Orders retrieved successfully.', OrderResource::collection($orders->load([
+            'items.productVariant.product',
+            'items.productVariant.variantOptions',
+            'sender',
+            'recipient',
+            'deposits',
+            'trackings'
 
-        // Fetch orders as supplier and eager load the related order items
-        $orders = $user->ordersAsSupplier()->with(['items' => function ($query) {
-            $query->with('product')->where('supplier_user_id', Auth::id());
-        }])->get(); // Use get() to execute the query and retrieve the results
-
-        return $this->json(200,true,'Orders retrieved successfully.',OrderResource::collection($orders));
+        ])));
     }
 
     // Show a specific order
@@ -34,7 +38,15 @@ class OrderController extends Controller
     {
         $order->load('orderItems.product');
 
-        return $this->json(200,true,'Order details retrieved successfully.',new OrderResource($order));
+        return $this->json(200, true, 'Order details retrieved successfully.', new OrderResource($order->load(
+            [
+                'items.productVariant.product',
+                'items.productVariant.variantOptions',
+                'sender',
+                'recipient',
+                'deposits'
+            ]
+        )));
     }
 
     // Confirm an order
@@ -54,46 +66,36 @@ class OrderController extends Controller
     {
         $item = OrderItem::find($id);
         if ($item->status !== 'pending') {
-            return $this->json(400,false, 'Only pending orders can be confirmed.');
+            return $this->json(400, false, 'Only pending orders can be confirmed.');
         }
         $item->update(['order_status' => 'confirmed']);
 
-        return $this->json(200,true,'Order item confirmed successfully.');
+        return $this->json(200, true, 'Order item confirmed successfully.');
     }
 
-    // Reject an order
-    public function rejectOrder(Order $order)
-    {
-        if ($order->status !== 'pending') {
-            return $this->json(400,false, 'Only pending orders can be rejected.');
-        }
 
-        $order->update(['order_status' => 'canceled']);
-
-        return $this->json(200,true,'Order rejected successfully.');
-    }
     // Confirm an order
     public function rejectOrderItem($id)
     {
         $item = OrderItem::find($id);
         if ($item->status !== 'pending') {
-            return $this->json(400,false,'Only pending orders can be rejected.');
+            return $this->json(400, false, 'Only pending orders can be rejected.');
         }
         $item->update(['order_status' => 'canceled']);
 
-        return $this->json(200,true,'Order item canceled successfully.');
+        return $this->json(200, true, 'Order item canceled successfully.');
     }
 
     // Confirm an order
     public function payOrder(Order $order)
     {
         if ($order->status !== 'confirmed') {
-            return $this->json(400,false,'Only confirmed orders can be pay.');
+            return $this->json(400, false, 'Only confirmed orders can be pay.');
         }
 
         $order->update(['order_status' => 'paid']);
 
-        return $this->json(200,true,'Order confirmed successfully.');
+        return $this->json(200, true, 'Order confirmed successfully.');
     }
 
 
@@ -101,12 +103,12 @@ class OrderController extends Controller
     public function refundOrder(Order $order)
     {
         if ($order->status !== 'paid') {
-            return $this->json(400,false,'Only paid orders can be refunded.');
+            return $this->json(400, false, 'Only paid orders can be refunded.');
         }
 
         $order->update(['order_status' => 'refunded']);
 
-        return $this->json(200,true,'Order confirmed successfully.');
+        return $this->json(200, true, 'Order confirmed successfully.');
     }
 
     // ship an order 
@@ -115,12 +117,12 @@ class OrderController extends Controller
     public function dispatchOrder(Order $order)
     {
         if ($order->status !== 'paid') {
-            return $this->json(400,false,'Only paid orders can be dispatched.');
+            return $this->json(400, false, 'Only paid orders can be dispatched.');
         }
 
         $order->update(['order_status' => 'shipped']);
 
-        return $this->json(200,true,'Order dispatched successfully.');
+        return $this->json(200, true, 'Order dispatched successfully.');
     }
 
     // Generate and download airway bill
@@ -136,6 +138,8 @@ class OrderController extends Controller
         $orderData = [
             'warehouse_number' => $order->warehouse_number,
             'total_price' => $order->total_price,
+            'shipping_cost' => $order->shipping_cost,
+            'items_cost' => $order->items_cost,
             'order_id' => $order->id,
         ];
 
@@ -186,7 +190,7 @@ class OrderController extends Controller
             // Create the file
             if (!Storage::disk('local')->put($filePath, $airwayBillContent)) {
                 Log::error("Failed to create the file at path: {$filePath}");
-                return $this->json(500,false,'Failed to create the file.');
+                return $this->json(500, false, 'Failed to create the file.');
             }
             Log::info('File successfully created.');
         }
@@ -198,7 +202,7 @@ class OrderController extends Controller
         // Ensure the file exists before attempting to download
         if (!file_exists($absoluteFilePath)) {
             Log::error('File creation failed even though put() was called.');
-            return $this->json(500,false,'Failed to create the file.');
+            return $this->json(500, false, 'Failed to create the file.');
         }
 
         // Download the file
@@ -210,11 +214,11 @@ class OrderController extends Controller
     public function deliverOrder(Order $order)
     {
         if ($order->status !== 'shipped') {
-            return $this->json(400,true,'Only shipped orders can be deliver.');
+            return $this->json(400, true, 'Only shipped orders can be deliver.');
         }
 
         $order->update(['order_status' => 'delivered']);
 
-        return $this->json(200,true,'Order deivered successfully.');
+        return $this->json(200, true, 'Order deivered successfully.');
     }
 }

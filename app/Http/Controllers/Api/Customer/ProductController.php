@@ -21,7 +21,7 @@ class ProductController extends Controller
     { 
          $params = request()->only(['search', 'sponsor', 'name', 'sku', 'description', 'manzil_choice', 'stock_quantity', 'unit_selling_price', 'category_id', 'sub_category_id', 'is_active', 'orderBy', 'per_page', 'trending', 'sort_by', 'sort_order']);
 
-        $query = Product::where('is_active', true);
+        $query = Product::with(['productVariants.images','productVariants.variantOptions'])->where('is_active', true);
     
         // Apply filters dynamically
         if (isset($params['manzil_choice'])) {
@@ -72,6 +72,10 @@ class ProductController extends Controller
         }
         $query->where('is_active', isset($params['is_active']) && $params['is_active'] == '0' ? false : true);
         $perPage = $params['per_page'] ?? 10;
-        return $this->json(200,true,'Product lists',ProductResource::collection($query->paginate($perPage)));
+        return response()->json([
+            'success' => true,
+            'message' => 'Product lists',
+            'data' => ProductResource::collection($query->paginate($perPage))->response()->getData(true)
+        ]);
     }
 }

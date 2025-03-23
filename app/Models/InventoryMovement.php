@@ -52,68 +52,73 @@ class InventoryMovement extends Model
     protected static function booted()
     {
         static::creating(function ($inventoryMovement) {
-                    $product = $inventoryMovement->product;
-                    if ($product){
-                        if ($inventoryMovement->type == 'addition'){
-                            $product->update([
-                                'stock_quantity' => ($product->stock_quantity + $inventoryMovement->quantity)
-                            ]);
-                        } elseif($inventoryMovement->type == 'deduction') {
-                            if($product->stock_quantity < $inventoryMovement->quantity) {
-                                Log::error('Stock Deduction Failed - Not Enough Stock', [
-                                    'stock_quantity' => $product->stock_quantity,
-                                    'requested_quantity' => $inventoryMovement->quantity,
-                                ]);
-                                throw new \Exception('Not enough stock.');
-                            }else {
-                                $product->update([
-                                    'stock_quantity' => ($product->stock_quantity - $inventoryMovement->quantity)
-                                ]); 
-                            }
-                        }
-                    } else {
-                        throw new \Exception('Product not found for Inventory Movement.');
-                    }
-         });
-
-        static::deleting(function ($inventoryMovement) {
-            $product = $inventoryMovement->product;
-            if ($product) {
-
+            $productVariant = $inventoryMovement->productVariant; 
+            if ($productVariant) {
                 if ($inventoryMovement->type == 'addition') {
-                    if ($product->stock_quantity < $inventoryMovement->quantity) {
-                        throw new \Exception('Not enough stock.');
-                    }
-                    $product->update(['stock_quantity' => ($product->stock_quantity - $inventoryMovement->quantity)]);
+                    $productVariant->update([
+                        'stock_quantity' => ($productVariant->stock_quantity + $inventoryMovement->quantity)
+                    ]);
                 } elseif ($inventoryMovement->type == 'deduction') {
-                    $product->update(['stock_quantity' => ($product->stock_quantity + $inventoryMovement->quantity)]);
+                    if ($productVariant->stock_quantity < $inventoryMovement->quantity) {
+                        Log::error('Stock Deduction Failed - Not Enough Stock', [
+                            'stock_quantity' => $productVariant->stock_quantity,
+                            'requested_quantity' => $inventoryMovement->quantity,
+                        ]);
+                        
+                        throw new \Exception('Not enough stock.');
+                    } else {
+                        $productVariant->update([
+                            'stock_quantity' => ($productVariant->stock_quantity - $inventoryMovement->quantity)
+                        ]);
+                    }
                 }
             } else {
-                throw new \Exception('Product not found for Inventory Movement.');
+                throw new \Exception('Product Variant not found for Inventory Movement.');
             }
         });
-
+    
+        static::deleting(function ($inventoryMovement) {
+            $productVariant = $inventoryMovement->productVariant;
+            if ($productVariant) {
+                if ($inventoryMovement->type == 'addition') {
+                    if ($productVariant->stock_quantity < $inventoryMovement->quantity) {
+                        throw new \Exception('Not enough stock.');
+                    }
+                    $productVariant->update(['stock_quantity' => ($productVariant->stock_quantity - $inventoryMovement->quantity)]);
+                } elseif ($inventoryMovement->type == 'deduction') {
+                    $productVariant->update(['stock_quantity' => ($productVariant->stock_quantity + $inventoryMovement->quantity)]);
+                }
+            } else {
+                throw new \Exception('Product Variant not found for Inventory Movement.');
+            }
+        });
+    
         static::updating(function ($inventoryMovement) {
-            $product = $inventoryMovement->product;
-            if ($product) {
+            $productVariant = $inventoryMovement->productVariant;
+            if ($productVariant) {
                 // Revert the previous stock adjustment
                 $previousStockQuantity = $inventoryMovement->getOriginal('quantity');
                 $previousType = $inventoryMovement->getOriginal('type');
-
+    
                 if ($previousType == 'addition') {
-                    $product->update(['stock_quantity' => $product->stock_quantity - $previousStockQuantity]);
+                    $productVariant->update(['stock_quantity' => $productVariant->stock_quantity - $previousStockQuantity]);
                 } elseif ($previousType == 'deduction') {
-                    $product->update(['stock_quantity' => $product->stock_quantity + $previousStockQuantity]);
+                    $productVariant->update(['stock_quantity' => $productVariant->stock_quantity + $previousStockQuantity]);
                 }
                 // Apply the new stock adjustment
                 if ($inventoryMovement->type == 'addition') {
-                    $product->update(['stock_quantity' => $product->stock_quantity + $inventoryMovement->quantity]);
+                    $productVariant->update(['stock_quantity' => $productVariant->stock_quantity + $inventoryMovement->quantity]);
                 } elseif ($inventoryMovement->type == 'deduction') {
-                    $product->update(['stock_quantity' => $product->stock_quantity - $inventoryMovement->quantity]);
+                    $productVariant->update(['stock_quantity' => $productVariant->stock_quantity - $inventoryMovement->quantity]);
                 }
             } else {
-                throw new \Exception('Product not found for Inventory Movement.');
+                throw new \Exception('Product Variant not found for Inventory Movement.');
             }
         });
+    }
+    
+    
+    function productVariant() {
+        return $this->belongsTo(ProductVariant::class);
     }
 }

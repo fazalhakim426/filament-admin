@@ -76,11 +76,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(OrderItem::class, 'supplier_user_id', 'id');
     }
-    //supplier order
     public function ordersAsSupplier()
     {
-        return $this->hasManyThrough(Order::class, OrderItem::class, 'supplier_user_id', 'id', 'id', 'order_id')
-            ->distinct(); // Using distinct to ensure unique orders are returned
+        return $this->hasMany(Order::class,'supplier_user_id');
     }
 
     function city()

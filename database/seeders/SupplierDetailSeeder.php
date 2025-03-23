@@ -10,7 +10,10 @@ use App\Models\Order;
 use App\Models\Deposit;
 use App\Models\InventoryMovement;
 use App\Models\Address;
+use App\Models\Image;
+use App\Models\ProductVariant;
 use App\Models\Review;
+use App\Models\VariantOption;
 
 class SupplierDetailSeeder extends Seeder
 {
@@ -20,86 +23,116 @@ class SupplierDetailSeeder extends Seeder
 
         SupplierDetail::factory(3)->create()->each(function ($supplierDetail) {
             echo "Created Supplier: {$supplierDetail->id}\n";
-
-            // Assign role to supplier
+ 
             $supplierDetail->user->assignRole('supplier');
             echo "Assigned 'supplier' role to User: {$supplierDetail->user->id}\n";
-
-            // Create products for the supplier
+ 
             $products = Product::factory()->count(3)->make()->toArray();
             $supplierDetail->user->products()->createMany($products);
             echo "Created 7 products for Supplier: {$supplierDetail->id}\n";
+ 
+                foreach ($supplierDetail->user->products as $product) {
 
-            // Add inventory movements for each product
-            foreach ($supplierDetail->user->products as $product) {
-                foreach($product->items as $item){
-                    InventoryMovement::factory()->create([
+                    for ($i = 0; $i < 3; $i++) {
+                        $variant = ProductVariant::create([
+                            'product_id' => $product->id,
+                            'sku' => $product->id . '-VAR' . ($i + 1),
+                            'unit_selling_price' => 50,
+                            'stock_quantity' => 0,
+                        ]);
+        
+                        VariantOption::create([
+                            'product_variant_id' => $variant->id,
+                            'attribute_name' => 'Size',
+                            'attribute_value' =>  'Large',
+                        ]); 
+                        VariantOption::create([
+                            'product_variant_id' => $variant->id,
+                            'attribute_name' => 'Color',
+                            'attribute_value' =>  'Red',
+                        ]); 
+                        $randomImageNumber = rand(1, 12);
+                        $imagePath = "/products/media/{$randomImageNumber}.jpg"; // Ensure these images exist in `public/storage/images/products/`
+                        
+                        Image::create([
+                            'imageable_id' => $variant->id,
+                            'imageable_type' => ProductVariant::class,
+                            'url' => $imagePath,
+                        ]);
+                    }
+                }
+            foreach ($supplierDetail->user->products as $product) { 
+                    foreach($product->productVariants as $variant){ 
+                        
+                     InventoryMovement::factory()->create([
                         'supplier_user_id' => $supplierDetail->user->id, 
                         'product_id' => $product->id,
+                        'product_variant_id' => $variant->id,
                         'type' => 'addition',
-                        'quantity' => mt_rand(50, 200),
+                        'quantity' => mt_rand(200, 300),
                         'unit_price' => mt_rand(50, 300),
-                    ]);
+                    ]);  
+                    echo "Added inventory movement for Product: {$product->id}\n";
                 }
 
-                echo "Added inventory movement for Product: {$product->id}\n";
             }
             // Create customers
             User::factory(1)->create()->each(function ($user) use ($supplierDetail) {
                 $user->assignRole('customer');
                 echo "Created Customer: {$user->id} and assigned 'customer' role\n";
-
+            
                 // Create addresses for customers
                 $addresses = Address::factory(2)->create(['user_id' => $user->id]);
                 echo "Created 2 addresses for Customer: {$user->id}\n";
-
-                // Fetch random products
-                $products = Product::inRandomOrder()->take(3)->get();
+            
+                // Fetch random product variants
+                $variants = ProductVariant::inRandomOrder()->take(1)->get();
                 $quantity = mt_rand(1, 4);
-
+            
                 // Create orders
                 Order::factory(10)->create([
                     'customer_user_id' => $user->id,
+                    'supplier_user_id' => $supplierDetail->user_id,
                     'recipient_id' => $addresses[1]->id,
                     'sender_id' => $addresses[0]->id,
-                ])->each(function ($order) use ($user, $supplierDetail, $quantity, $products) {
+                    'shipping_cost' => 10,
+                ])->each(function ($order) use ($user, $supplierDetail, $quantity, $variants) {
                     echo "Created Order: {$order->id} for Customer: {$user->id}\n";
-
-                    foreach ($products as $product) {
-                        $order->products()->syncWithoutDetaching([
-                            $product->id => [
-                                'supplier_user_id' => $supplierDetail->user_id,
-                                'quantity' => $quantity,
-                                'price' => $product->unit_selling_price,
-                            ]
-                        ]);
-
+            
+                    foreach ($variants as $variant){
+                        $order->items()->create([
+                            'product_variant_id' => $variant->id,
+                            'product_id' => $variant->product_id,
+                            'supplier_user_id' => $supplierDetail->user_id,
+                            'quantity' => $quantity,
+                            'price' => $variant->unit_selling_price,
+                        ]);            
                         Review::factory(fake()->numberBetween(3, 15))->create([
                             'order_id' => $order->id,
-                            'product_id' => $product->id,
+                            'product_id' => $variant->product_id, // Ensure the review is tied to the variant
                             'user_id' => $order->customer_user_id, // Ensure the review belongs to the correct user
-                        ]);
-
-                        echo "Added Product: {$product->id} to Order: {$order->id}\n";
-
+                        ]);            
+                        echo "Added Product Variant: {$variant->id} to Order: {$order->id}\n";
+                        echo "total Quantity: {$variant->quantity}\n";
+                        echo "requested Quantity: {$quantity}\n";
+            
                         // Add inventory deduction
-                        $item = $order->products()->where('product_id', $product->id)->first();
-                        if ($item) {
-                            InventoryMovement::factory()->create([
-                                'supplier_user_id' => $supplierDetail->user->id,
-                                'order_item_id' => $item->pivot->id,
-                                'product_id' => $product->id,
-                                'type' => 'deduction',
-                                'quantity' => $quantity,
-                                'unit_price' => $product->unit_selling_price,
-                                'total_price' => $product->unit_selling_price * $quantity
-                            ]);
-                            echo "Recorded inventory deduction for Product: {$product->id} in Order: {$order->id}\n";
-                        }
-                    } 
-                   
-                 });
+                        InventoryMovement::factory()->create([
+                            'supplier_user_id' => $supplierDetail->user->id,
+                            'order_item_id' => $order->items()->where('product_variant_id', $variant->id)->first()->id,
+                            'product_variant_id' => $variant->id,
+                            'product_id' => $variant->product_id, // Keep product reference if needed
+                            'type' => 'deduction',
+                            'quantity' => $quantity,
+                            'unit_price' => $variant->unit_selling_price,
+                            'total_price' => $variant->unit_selling_price * $quantity
+                        ]);
+            
+                        echo "Recorded inventory deduction for Product Variant: {$variant->id} in Order: {$order->id}\n";
+                    }
+                });
             });
+            
         });
 
         echo "Seeding Completed!\n";

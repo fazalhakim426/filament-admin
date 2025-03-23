@@ -26,5 +26,7 @@ Route::get('users', function () {
         UserResource::collection(User::all())
     );
 });
+Route::get('order/{warehouse}/trackings', [\App\Http\Controllers\Api\Supplier\OrderTrackingController::class, 'index']);
+
 require('customer.php');
 require('supplier.php');
