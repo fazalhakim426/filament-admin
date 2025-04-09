@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ReviewController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -10,6 +11,8 @@ Route::middleware(['auth:sanctum'])->prefix('supplier')->group(function () {
     //inventory
     Route::apiResource('inventroy-movements', \App\Http\Controllers\Api\Supplier\InventoryMovementController::class);
     Route::get('{product}/inventroy-movements', [\App\Http\Controllers\Api\Supplier\InventoryMovementController::class, 'getInventoryMovement']);
+ 
+
 
 
 

@@ -14,6 +14,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class ProductController extends Controller
@@ -56,14 +57,14 @@ class ProductController extends Controller
         }
 
         return $this->json(200, true, 'Product list', ProductResource::collection($query->with([
-            'productVariants.variantOptions'
+            'productVariants.variantOptions','reviews'
         ])->get()));
     }
 
     public function show(Product $product)
     {
         return $this->json(200, true, 'Show product', new ProductResource($product->load(
-            'productVariants.variantOptions'
+            'productVariants.variantOptions','reviews'
         )));
     }
     public function store(Request $request)
@@ -74,7 +75,9 @@ class ProductController extends Controller
             'description' => 'nullable|string',
             'variants' => 'nullable|array', 
             'variants.*.sku' => 'required|string|max:255|unique:product_variants,sku',
-            'variants.*.description' => 'nullable|string', 
+            'variants.*.description' => 'nullable|string',  
+            'variants.*.media' => 'required|array',
+            'variants.*.media.*' => 'file|mimes:jpeg,png,jpg,gif,svg,mp4,avi,mov,webm|max:20480', 
             'variants.*.unit_selling_price' => 'required|numeric|min:0',
             'variants.*.options' => 'nullable|array',  
             'variants.*.options.*.attribute_name' => 'required|string|max:255',
@@ -102,12 +105,14 @@ class ProductController extends Controller
 
             // Create variants if provided
             if (!empty($validated['variants'])) {
-                foreach ($validated['variants'] as $variantData) {
+                foreach ($validated['variants'] as $index => $variantData) {
+
                     $variant = $product->productVariants()->create([
                         'sku' => $variantData['sku'],
                         'unit_selling_price' => $variantData['unit_selling_price'],
-                        'description' => $variantData['description']??'',
+                        'description' => $variantData['description'] ?? '',
                     ]);
+
                     // Create variant options if provided
                     if (!empty($variantData['options'])) {
                         foreach ($variantData['options'] as $option) {
@@ -116,9 +121,23 @@ class ProductController extends Controller
                                 'attribute_value' => $option['attribute_value'],
                             ]);
                         }
+                    } 
+                    // ✅ Handle uploaded images/videos — move this inside the loop
+                    if ($request->hasFile("variants.$index.media")) {
+                        foreach ($request->file("variants.$index.media") as $mediaFile) {
+                            $filePath = $mediaFile->store('variant_media', 'public');
+                            $type = str_starts_with($mediaFile->getMimeType(), 'video') ? 'video' : 'image';
+
+                            $variant->images()->create([
+                                'url' => $filePath,
+                                'type' => $type,
+                            ]);
+                        }
                     }
+                    
                 }
             }
+
 
             DB::commit();
             return $this->json(200, true, 'Product created successfully', new ProductResource($product->load('productVariants.variantOptions')));
@@ -137,6 +156,8 @@ class ProductController extends Controller
             'variants' => 'required|array',
             'variants.*.id' => 'nullable|exists:product_variants,id',
             'variants.*.description' => 'nullable|string', 
+            'variants.*.media' => 'array',
+            'variants.*.media.*' => 'file|mimes:jpeg,png,jpg,gif,svg,mp4,avi,mov,webm|max:20480', 
             'variants.*.sku' => [
                 'required', 'string', 'max:255',
                 function ($attribute, $value, $fail) use ($request) {
@@ -149,6 +170,7 @@ class ProductController extends Controller
             ],
             'variants.*.unit_selling_price' => 'required|numeric|min:0',
             'variants.*.options' => 'nullable|array',
+            'variants.*.delete_media_ids' => 'array',
             'variants.*.options.*.id' => 'nullable|exists:variant_options,id',
             'variants.*.options.*.attribute_name' => 'required|string|max:255',
             'variants.*.options.*.attribute_value' => 'required|string|max:255',
@@ -172,9 +194,11 @@ class ProductController extends Controller
                 $existingVariantIds = $product->productVariants()->pluck('id')->toArray();
                 $updatedVariantIds = [];
 
-                foreach ($validated['variants'] as $variantData) {
+                foreach ($validated['variants'] as $index=>$variantData) {
+
                     if (isset($variantData['id']) && in_array($variantData['id'], $existingVariantIds)) {
                         // Update existing variant
+                     
                         $variant = ProductVariant::find($variantData['id']);
                         $variant->update([
                             'sku' => $variantData['sku'],
@@ -182,6 +206,15 @@ class ProductController extends Controller
                             'description' => $variantData['description']??'',
 
                         ]);
+                        if (!empty($variantData['delete_media_ids'])) {
+                            foreach ($variantData['delete_media_ids'] as $mediaId) { 
+                                $media = $variant->images()->find($mediaId);
+                                if ($media) {
+                                    Storage::disk('public')->delete($media->url);
+                                    $media->delete();
+                                }
+                            }
+                        }
                     } else {
                         // Create new variant
                         $variant = $product->productVariants()->create([
@@ -189,6 +222,19 @@ class ProductController extends Controller
                             'unit_selling_price' => $variantData['unit_selling_price'],
                         ]);
                     }
+
+                    if ($request->hasFile("variants.$index.media")) {
+                        foreach ($request->file("variants.$index.media") as $mediaFile) {
+                            $filePath = $mediaFile->store('variant_media', 'public');
+                            $type = str_starts_with($mediaFile->getMimeType(), 'video') ? 'video' : 'image';
+                    
+                            $variant->images()->create([
+                                'url' => $filePath,
+                                'type' => $type,
+                            ]);
+                        }
+                    }
+                    
 
                     $updatedVariantIds[] = $variant->id;
 
@@ -217,6 +263,9 @@ class ProductController extends Controller
  
                         $variant->variantOptions()->whereNotIn('id', $updatedOptionIds)->delete();
                     }
+
+              
+                    
                 }
  
                 $product->productVariants()->whereNotIn('id', $updatedVariantIds)->delete();

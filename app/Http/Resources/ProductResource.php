@@ -21,6 +21,7 @@ class ProductResource extends JsonResource
                 'name' => $this->name,
                 'description' => $this->description, 
                 'is_active' => (bool) $this->is_active,
+                'created_date' => $this->created_at->format('Y-m-d H:i:s'),
                 'created_at' => $this->created_at,
                 'updated_at' => $this->updated_at,
                 'manzil_choice'=> (bool) $this->manzil_choice,
@@ -30,7 +31,7 @@ class ProductResource extends JsonResource
                 'sub_category' => new SubCategoryResource($this->subCategory),
                 'reseller' => new ResellerResource($this->whenLoaded('reseller')),
          
-                'review' => ReviewResource::collection($this->whenLoaded('reviews')),
+                'reviews' => ReviewResource::collection($this->whenLoaded('reviews')),
                 'created_at' => $this->created_at->diffForHumans(), // Human-readable format
                 'updated_at' => $this->updated_at->diffForHumans(),
             ];

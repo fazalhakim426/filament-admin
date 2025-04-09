@@ -46,6 +46,13 @@ class SupplierDetailFactory extends Factory
             'term_agreed' => $this->faker->boolean(),
             'marketing_type' => $this->faker->randomElement([1, 2, 3]),
             'preferred_contact_time' => $this->faker->optional()->dateTimeThisYear(),
+            'cnic' => $this->faker->numerify('#####-#######-#'),
+            'bank_name' => $this->faker->word(),
+            'bank_branch' => $this->faker->word(),
+            'bank_account_number' => $this->faker->numerify('############'),
+            'bank_iban' => $this->faker->numerify('PK##-#######-#########'),    
+            'term_of_services' => 'Your long terms of service content goes here...',
+       
         ];
     }
 }

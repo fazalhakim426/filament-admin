@@ -12,6 +12,7 @@ class ReviewFactory extends Factory
     {
         return [ 
             'rating_stars' => $this->faker->randomFloat(1, 1, 5),
+            'review_text' => $this->faker->text(),
             'created_at' => now(),
             'updated_at' => now(),
         ];

@@ -16,7 +16,6 @@ class SupplierDetailResource extends JsonResource
     {
         return [
             'business_name' => $this->business_name,
-            'contact_person' => $this->contact_person,
             'website' => $this->website,
             'supplier_type' => $this->supplier_type,
             'category' => new CategoryResource($this->category),
@@ -32,6 +31,14 @@ class SupplierDetailResource extends JsonResource
             'term_agreed' => $this->term_agreed,
             'marketing_type' => $this->marketing_type,
             'preferred_contact_time' => $this->preferred_contact_time,
+            'cnic' => $this->cnic,
+            'contact_person' => $this->contact_person,
+            'bank_name' => $this->bank_name,
+            'bank_branch' => $this->bank_branch, 
+            'bank_account_number' => $this->bank_account_number,
+            'bank_iban' => $this->bank_iban,
+            'term_of_services' => $this->term_of_services,
+
         ];
     }
 }

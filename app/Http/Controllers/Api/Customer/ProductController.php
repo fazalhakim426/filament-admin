@@ -21,7 +21,7 @@ class ProductController extends Controller
     { 
          $params = request()->only(['search', 'sponsor', 'name', 'sku', 'description', 'manzil_choice', 'stock_quantity', 'unit_selling_price', 'category_id', 'sub_category_id', 'is_active', 'orderBy', 'per_page', 'trending', 'sort_by', 'sort_order']);
 
-        $query = Product::with(['productVariants.images','productVariants.variantOptions'])->where('is_active', true);
+        $query = Product::with(['productVariants.images','productVariants.variantOptions','reviews'])->where('is_active', true);
     
         // Apply filters dynamically
         if (isset($params['manzil_choice'])) {
@@ -39,8 +39,15 @@ class ProductController extends Controller
             $query->where(function ($query) use ($search) {
                 $query->where('name', 'like', "%{$search}%")
                     ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%")
                     ->orWhereHas('category', function ($query) use ($search) {
                         $query->where('name', 'like', "%{$search}%")->orWhere('description', 'like', "%{$search}%");
+                    })->orWhereHas('productVariants', function ($query) use ($search) {
+                        $query->where('sku', 'like', "%{$search}%")
+                        ->orWhere('description', 'like', "%{$search}%")->orWhere('unit_selling_price',$search)
+                            ->orWhereHas('variantOptions', function ($query) use ($search) {
+                                $query->where('attribute_value', 'like', "%{$search}%");
+                            });
                     })
                     ->orWhereHas('subCategory', function ($query) use ($search) {
                         $query->where('name', 'like', "%{$search}%")->orWhere('description', 'like', "%{$search}%");

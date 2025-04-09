@@ -130,6 +130,12 @@ class AuthController extends Controller
             'term_agreed' => 'nullable|boolean',
             'marketing_type' => 'nullable|string|max:255',
             'preferred_contact_time' => 'nullable|date',
+            'cnic' => 'nullable|min:13|max:17',
+            'bank_name' => 'nullable|string',
+            'bank_iban' => 'nullable|string|min:10|max:24',
+            'bank_account_number' => 'nullable|string|min:8|max:24',
+            'bank_branch' => 'nullable|string|max:255',
+            'term_of_services' => 'nullable|string|max:1000',
         ]);
 
         // Create the user
@@ -165,6 +171,12 @@ class AuthController extends Controller
             'term_agreed' => $request->term_agreed,
             'marketing_type' => $request->marketing_type,
             'preferred_contact_time' => $request->preferred_contact_time,
+            'cnic' => $request->cnic,
+            'bank_name' => $request->bank_name,
+            'bank_iban' => $request->bank_iban,
+            'bank_branch' => $request->bank_branch,
+            'bank_account_number' => $request->bank_account_number,
+            'term_of_services' => $request->term_of_services,
         ]);
 
         return $this->json(

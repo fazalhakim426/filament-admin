@@ -92,6 +92,11 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users');
             $table->string('business_name');
             $table->string('contact_person')->nullable();
+            $table->string('cnic')->nullable();
+            $table->string('bank_name')->nullable();
+            $table->string('bank_iban')->nullable();
+            $table->string('bank_account_number')->nullable();
+            $table->string('bank_branch')->nullable();
             $table->string('website')->nullable();
             $table->string('supplier_type')->nullable();
             $table->foreignId('category_id')->nullable()->constrained('categories');
@@ -105,6 +110,7 @@ return new class extends Migration
             $table->string('daraz_url')->nullable();
             $table->string('ecommerce_experience')->nullable();
             $table->boolean('term_agreed')->default(false);
+            $table->text('term_of_services')->nullable();
             $table->string('marketing_type')->nullable();
             $table->timestamp('preferred_contact_time')->nullable();
             $table->softDeletes();
@@ -177,6 +183,7 @@ return new class extends Migration
             $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade'); // Customer who rated
             $table->decimal('rating_stars', 2, 1)->default(0); // Rating stars out of 5
+            $table->text('review_text')->nullable();
             $table->timestamps();
             $table->index(['product_id', 'user_id']);
         });
