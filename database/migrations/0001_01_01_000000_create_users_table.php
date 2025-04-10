@@ -146,8 +146,8 @@ return new class extends Migration
         Schema::create('variant_options', function (Blueprint $table) {
             $table->id();
             $table->foreignId('product_variant_id')->constrained('product_variants')->onDelete('cascade');
-            $table->string('attribute_name'); // e.g., color, size, material
-            $table->string('attribute_value'); // e.g., Red, Small, Cotton
+            $table->string('attribute_name');
+            $table->string('attribute_value');
             $table->timestamps();
         });
 
@@ -197,6 +197,8 @@ return new class extends Migration
             $table->integer('quantity');
             $table->decimal('price', 10, 2)->nullable()->default(0);
             $table->enum('order_status', ['pending', 'confirmed', 'canceled'])->default('pending');
+            $table->timestamps();
+
         });
 
         Schema::create('inventory_movements', function (Blueprint $table) {

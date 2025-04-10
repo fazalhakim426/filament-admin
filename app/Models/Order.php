@@ -15,6 +15,7 @@ class Order extends Model
     use SoftDeletes;
 
     public $fillable = [
+        'supplier_user_id',
         'warehouse_number',
         'customer_user_id',
         'recipient_id',

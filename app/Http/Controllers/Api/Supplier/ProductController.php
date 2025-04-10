@@ -55,10 +55,27 @@ class ProductController extends Controller
         if (isset($params['is_active'])) {
             $query->where('is_active', $params['is_active'] == 'true' ? true : false);
         }
+        $products = $query
+            ->with('productVariants.variantOptions','reviews')
+            ->paginate(request('per_page', 15));
 
-        return $this->json(200, true, 'Product list', ProductResource::collection($query->with([
-            'productVariants.variantOptions','reviews'
-        ])->get()));
+        return $this->json(200, true, 'Products retrieved successfully.', [
+            'data' => ProductResource::collection($products),
+            'meta' => [
+                'current_page' => $products->currentPage(),
+                'last_page' => $products->lastPage(),
+                'per_page' => $products->perPage(),
+                'total' => $products->total(),
+                'from' => $products->firstItem(),
+                'to' => $products->lastItem(),
+            ],
+            'links' => [
+                'first' => $products->url(1),
+                'last' => $products->url($products->lastPage()),
+                'prev' => $products->previousPageUrl(),
+                'next' => $products->nextPageUrl(),
+            ]
+        ]);
     }
 
     public function show(Product $product)

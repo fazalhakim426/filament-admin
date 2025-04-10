@@ -20,36 +20,40 @@ class OrderStatusController extends Controller
             return $this->json(200, true, 'order already ' . $status);
         }
 
-        $allowedStatuses = [
-            'new',
-            'accepted',
-            'processing',
-            'confirmed',
-            'ready-to-dispatched',
-            'shipped',
-            'paid',
-            'refunded',
-            'dispatched',
-            'intransit',
-            'delivered',
-            'returned',
-            'canceled'
-        ];
+        // $allowedStatuses = [
+        //     'new',
+        //     'accepted',
+        //     'processing',
+        //     'confirmed',
+        //     'ready-to-dispatched',
+        //     'shipped',
+        //     'paid',
+        //     'refunded',
+        //     'dispatched',
+        //     'intransit',
+        //     'delivered',
+        //     'returned',
+        //     'canceled'
+        // ];
 
 
-        if (!in_array($status, $allowedStatuses)) {
-            return $this->json(422, false, 'Invalid status');
-        }
+        // if (!in_array($status, $allowedStatuses)) {
+        //     return $this->json(422, false, 'Invalid status');
+        // }
 
         $order->update(['order_status' => $status]);
 
 
-        return  $this->json(200, true, "Order marked as $status");
+        return  $this->json(200, true, "Order marked as $order->order_status");
     }
 
     function accepted(Request $request, Order $order)
     {
-        return $this->updateStatus($request, $order, 'accepted');
+        return $this->updateStatus($request, $order, '');
+    }
+    function anyStatus(Request $request, Order $order,$status)
+    { 
+        return $this->updateStatus($request, $order, $status);
     }
 
 

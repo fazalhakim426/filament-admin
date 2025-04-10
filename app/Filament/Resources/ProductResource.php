@@ -12,9 +12,11 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\FileUpload;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\ImageColumn;
 
 class ProductResource extends Resource
 {
@@ -28,7 +30,6 @@ class ProductResource extends Resource
     {
         return $form
             ->schema([
-
                 Forms\Components\TextInput::make('name')
                     ->required()
                     ->maxLength(255),
@@ -47,7 +48,7 @@ class ProductResource extends Resource
                     ->relationship('category', 'name')
                     ->required()
                     ->live()
-                    ->afterStateUpdated(fn ($state, callable $set) => $set('sub_category_id', null)),
+                    ->afterStateUpdated(fn($state, callable $set) => $set('sub_category_id', null)),
 
                 Select::make('sub_category_id')
                     ->label('Sub Category')
@@ -55,7 +56,7 @@ class ProductResource extends Resource
                     ->searchable()
                     ->relationship('subCategory', 'name')
                     ->required()
-                    ->options(fn ($get) => \App\Models\SubCategory::where('category_id', $get('category_id'))->pluck('name', 'id'))
+                    ->options(fn($get) => \App\Models\SubCategory::where('category_id', $get('category_id'))->pluck('name', 'id'))
                     ->live()
                     ->reactive(),
 
@@ -71,31 +72,31 @@ class ProductResource extends Resource
                     ->label('Product Variants')
                     ->relationship('productVariants')
                     ->schema([
-                        
-                Repeater::make('images')
-                ->label('Product Media')
-                ->relationship('images')
-                ->schema([
-                    Select::make('type')
-                        ->options([
-                            'image' => 'Image',
-                            'video' => 'Video',
-                        ])
-                        ->default('image')
-                        ->required(),
 
-                    FileUpload::make('url')
-                        ->label('Upload File')
-                        ->preserveFilenames()
-                        ->directory('products/media')
-                        ->required()
-                        ->image()
-                        ->acceptedFileTypes(['image/*', 'video/mp4', 'video/avi', 'video/mov', 'video/webm'])
-                        ->maxSize(102400),
-                ])
-                ->minItems(1)
-                ->maxItems(10)
-                ->columnSpanFull(),
+                        Repeater::make('images')
+                            ->label('Product Media')
+                            ->relationship('images')
+                            ->schema([
+                                Select::make('type')
+                                    ->options([
+                                        'image' => 'Image',
+                                        'video' => 'Video',
+                                    ])
+                                    ->default('image')
+                                    ->required(),
+
+                                FileUpload::make('url')
+                                    ->label('Upload File')
+                                    ->preserveFilenames()
+                                    ->directory('products/media')
+                                    ->required()
+                                    ->image()
+                                    ->acceptedFileTypes(['image/*', 'video/mp4', 'video/avi', 'video/mov', 'video/webm'])
+                                    ->maxSize(102400),
+                            ])
+                            ->minItems(1)
+                            ->maxItems(10)
+                            ->columnSpanFull(),
                         TextInput::make('sku')
                             ->label('SKU')
                             ->required()
@@ -123,7 +124,7 @@ class ProductResource extends Resource
                             ])
                             ->minItems(1)
                             ->maxItems(5)
-                            
+
                             ->columnSpanFull(),
                     ])
                     ->minItems(1)
@@ -131,29 +132,63 @@ class ProductResource extends Resource
                     ->columnSpanFull(),
             ]);
     }
+   
+    
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')
-                    ->searchable(),
-
-                Tables\Columns\TextColumn::make('supplierUser.name')
+                TextColumn::make('supplierUser.name')
                     ->label('Supplier')
                     ->searchable()
                     ->sortable(),
+                    ImageColumn::make('variant_images')
+                    ->label('Images')
+                    ->getStateUsing(function ($record) {
+                        return optional($record->productVariants->first())
+                            ? $record->productVariants->first()->images->take(3)->pluck('url')
+                            : [];
+                    })
+                    ->circular()
+                    ->stacked(),
+                
 
-                Tables\Columns\IconColumn::make('is_active')
-                    ->label('Active')
-                    ->boolean(),
-
-                Tables\Columns\TextColumn::make('category.name')
-                    ->label('Category')
-                    ->sortable()
+                TextColumn::make('name')
                     ->searchable(),
 
-                Tables\Columns\TextColumn::make('created_at')
+                    TextColumn::make('id')
+                    ->label('Variants & Options')
+                    ->formatStateUsing(function ($record) {
+                        return $record->productVariants
+                            ->take(3)
+                            ->map(function ($variant) {
+                                $options = $variant->variantOptions
+                                    ->take(3)
+                                    ->map(fn($opt) => "{$opt->attribute_name}: {$opt->attribute_value}")
+                                    ->join(', ');
+                
+                                return "SKU - {$variant->sku} ({$options}) - RS {$variant->unit_selling_price}";
+                            })
+                            ->join('<br><br>');  
+                    })
+                    ->html()
+                    ->wrap()
+                    ->limit(200),
+                
+                
+                
+
+                    IconColumn::make('is_active')
+                    ->label('Active')
+                    ->boolean(), 
+
+                    TextColumn::make('category.name')
+                        ->label('Category')
+                        ->sortable()
+                        ->searchable(),
+
+                TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -170,10 +205,13 @@ class ProductResource extends Resource
             ]);
     }
 
+
+
     public static function getPages(): array
     {
         return [
             'index' => Pages\ManageProducts::route('/'),
         ];
-    }
+    } 
+
 }

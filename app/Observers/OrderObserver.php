@@ -4,18 +4,41 @@ namespace App\Observers;
 
 use App\Models\Order;
 use App\Models\OrderTracking;
+use App\Models\Product;
+use App\Models\ProductVariant;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class OrderObserver
 {
-    /**
-     * Handle the Order "created" event.
-     */
     public function creating(Order $order): void
     {
         $order->warehouse_number = $order->generateWarehouseNumber();
+    
+        $items = $order->items ?? collect(); // This should be a relationship or array
+    
+        // Get the first item to extract supplier info
+        $firstItem = $items->first();
+    
+        if ($firstItem) {
+            // From variant -> product -> supplier
+            if ($firstItem->product_variant_id) {
+                $variant = \App\Models\ProductVariant::find($firstItem->product_variant_id);
+                if ($variant && $variant->product) {
+                    $order->supplier_user_id = $variant->product->supplier_user_id;
+                }
+            }
+    
+            // If variant missing, try from product_id
+            elseif ($firstItem->product_id) {
+                $product = \App\Models\Product::find($firstItem->product_id);
+                if ($product) {
+                    $order->supplier_user_id = $product->supplier_user_id;
+                }
+            }
+        }
     }
+    
     public function created(Order $order): void
     {
         OrderTracking::create([
@@ -39,10 +62,10 @@ class OrderObserver
                 $order->addInventory();
             }
         }
-        
+
         if ($order->isDirty('items_cost')) {
             $order->updateQuietly([
-            'items_cost' => $order->items()->sum(DB::raw('price * quantity')),
+                'items_cost' => $order->items()->sum(DB::raw('price * quantity')),
             ]);
         }
     }

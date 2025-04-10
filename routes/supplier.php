@@ -5,16 +5,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth:sanctum'])->prefix('supplier')->group(function () {
-
     Route::apiResource('products', \App\Http\Controllers\Api\Supplier\ProductController::class);
     Route::patch('products/{product}/deactivate', [\App\Http\Controllers\Api\Supplier\ProductController::class, 'deactivate']);
     //inventory
     Route::apiResource('inventroy-movements', \App\Http\Controllers\Api\Supplier\InventoryMovementController::class);
     Route::get('{product}/inventroy-movements', [\App\Http\Controllers\Api\Supplier\InventoryMovementController::class, 'getInventoryMovement']);
- 
-
-
-
 
     Route::get('/orders', [\App\Http\Controllers\Api\Supplier\OrderController::class, 'index']);
     //confirm orders and thier items.
@@ -38,7 +33,13 @@ Route::middleware(['auth:sanctum'])->prefix('supplier')->group(function () {
     Route::get('/change-order-status/{order}/delivered', [\App\Http\Controllers\Api\Supplier\OrderStatusController::class, 'delivered']);
     Route::get('/change-order-status/{order}/returned', [\App\Http\Controllers\Api\Supplier\OrderStatusController::class, 'returned']);
     Route::get('/change-order-status/{order}/canceled', [\App\Http\Controllers\Api\Supplier\OrderStatusController::class, 'canceled']);
+    Route::get('/any-order-status/{order}/{status}', [\App\Http\Controllers\Api\Supplier\OrderStatusController::class, 'anyStatus']);
     Route::patch('/orders/{order}/download-airway-bill', [\App\Http\Controllers\Api\Supplier\OrderController::class, 'downloadAirwayBill']);
+
+
+    Route::get('/reviews', [\App\Http\Controllers\Api\Supplier\ReviewController::class, 'index']);
+    Route::get('/dashboard-metrics', [\App\Http\Controllers\Api\Supplier\AnalyticsController::class, 'getMetrics']);
+    Route::get('/revenue-graph', [\App\Http\Controllers\Api\Supplier\AnalyticsController::class, 'getRevenueGraphData']);
 
 
     Route::get('/analytics/products-sales', [\App\Http\Controllers\Api\Supplier\AnalyticsController::class, 'getProductSales']);

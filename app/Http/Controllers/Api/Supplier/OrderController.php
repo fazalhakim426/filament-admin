@@ -11,9 +11,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Barryvdh\DomPDF\Facade\Pdf;
-
- 
-
 class OrderController extends Controller
 {
     use CustomRespone;
@@ -21,16 +18,33 @@ class OrderController extends Controller
     public function index()
     {
         $user = Auth::user();
-        $orders = Order::where('supplier_user_id', $user->id)->get();
-        return $this->json(200, true, 'Orders retrieved successfully.', OrderResource::collection($orders->load([
+        $orders = Order::where('supplier_user_id', $user->id)->with([
             'items.productVariant.product',
             'items.productVariant.variantOptions',
             'sender',
             'recipient',
             'deposits',
             'trackings'
+        ])
+        ->paginate(request('per_page', 15));
 
-        ])));
+        return $this->json(200, true, 'Order retrieved successfully.', [
+            'data' => OrderResource::collection($orders),
+            'meta' => [
+                'current_page' => $orders->currentPage(),
+                'last_page' => $orders->lastPage(),
+                'per_page' => $orders->perPage(),
+                'total' => $orders->total(),
+                'from' => $orders->firstItem(),
+                'to' => $orders->lastItem(),
+            ],
+            'links' => [
+                'first' => $orders->url(1),
+                'last' => $orders->url($orders->lastPage()),
+                'prev' => $orders->previousPageUrl(),
+                'next' => $orders->nextPageUrl(),
+            ]
+        ]); 
     }
 
     // Show a specific order

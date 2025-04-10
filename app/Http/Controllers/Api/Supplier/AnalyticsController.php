@@ -7,27 +7,124 @@ use App\Models\Deposit;
 use App\Models\OrderItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
+use App\Models\Order;
+use Illuminate\Support\Facades\DB;
 
 class AnalyticsController extends Controller
-{
-    public function getRevenueHistory(Request $request)
+{ 
+
+    public function getMetrics(Request $request)
     {
-        // Get the authenticated user (supplier)
-        // $supplier = Auth::user();
+        $supplierId = auth()->id(); // Or fetch from $request if needed
 
-        // // Calculate revenue history grouped by day
-        // $revenueHistory = OrderItem::selectRaw('DATE(orders.created_at) as transaction_date, 
-        //                                         SUM(order_items.price) as total_revenue')
-        //     ->join('orders', 'order_items.order_id', '=', 'orders.id')
-        //     // ->where('orders.status', 'paid') // Ensure the order is paid
-        //     ->where('order_items.supplier_user_id', $supplier->id) // Filter by authenticated supplier
-        //     ->groupByRaw('DATE(orders.created_at)')
-        //     ->orderByDesc('transaction_date') // Order by the latest transaction date
-        //     ->get();
+        $now = Carbon::now();
+        $startOfCurrentMonth = $now->copy()->startOfMonth();
+        $startOfLastMonth = $now->copy()->subMonth()->startOfMonth();
+        $endOfLastMonth = $now->copy()->subMonth()->endOfMonth();
 
-        // return response()->json($revenueHistory);
-        return response()->json('note implemented yet');
+        $validStatuses = ['delivered', 'paid', 'shipped', 'ready-to-dispatched', 'processing'];
+
+        // ========== Current Month Metrics ==========
+        $totalOrders = Order::where('supplier_user_id', $supplierId)->count();
+
+        $newOrders = Order::where('supplier_user_id', $supplierId)
+            ->where('order_status', 'new')
+            ->count();
+
+        $totalRevenue = Order::where('supplier_user_id', $supplierId)
+            ->whereIn('order_status', $validStatuses)
+            ->sum('total_price');
+
+        $totalSales = DB::table('order_items')
+            ->where('supplier_user_id', $supplierId)
+            ->sum('quantity');
+
+        // ========== Last Month Metrics ==========
+        $lastMonthOrders = Order::where('supplier_user_id', $supplierId)
+            ->whereBetween('created_at', [$startOfLastMonth, $endOfLastMonth])
+            ->count();
+
+        $lastMonthNewOrders = Order::where('supplier_user_id', $supplierId)
+            ->where('order_status', 'new')
+            ->whereBetween('created_at', [$startOfLastMonth, $endOfLastMonth])
+            ->count();
+
+        $lastMonthRevenue = Order::where('supplier_user_id', $supplierId)
+            ->whereIn('order_status', $validStatuses)
+            ->whereBetween('created_at', [$startOfLastMonth, $endOfLastMonth])
+            ->sum('total_price');
+
+        $lastMonthSales = DB::table('order_items')
+            ->where('supplier_user_id', $supplierId)
+            ->whereBetween('created_at', [$startOfLastMonth, $endOfLastMonth])
+            ->sum('quantity');
+
+        // ========== Percentage Increases ==========
+        $orderGrowth = $this->calculateGrowth($lastMonthOrders, $totalOrders);
+        $newOrderGrowth = $this->calculateGrowth($lastMonthNewOrders, $newOrders);
+        $revenueGrowth = $this->calculateGrowth($lastMonthRevenue, $totalRevenue);
+        $salesGrowth = $this->calculateGrowth($lastMonthSales, $totalSales);
+
+        return response()->json([
+            'metrics' => [
+                'total_orders' => $totalOrders,
+                'new_orders' => $newOrders,
+                'total_sales' => $totalSales,
+                'total_revenue' => $totalRevenue,
+            ],
+            'growth' => [
+                'total_orders_growth' => $orderGrowth,
+                'new_orders_growth' => $newOrderGrowth,
+                'total_sales_growth' => $salesGrowth,
+                'total_revenue_growth' => $revenueGrowth,
+            ]
+        ]);
     }
+
+    private function calculateGrowth($lastMonthValue, $currentValue)
+    {
+        if ($lastMonthValue == 0 && $currentValue == 0) {
+            return 0;
+        }
+
+        if ($lastMonthValue == 0) {
+            return 100;
+        }
+
+        return round((($currentValue - $lastMonthValue) / $lastMonthValue) * 100, 2);
+    }
+
+
+    public function getRevenueGraphData(Request $request)
+    {
+        $supplierId = auth()->id();
+        $range = $request->input('range', 'daily'); // daily | weekly | monthly | yearly
+
+        $validStatuses = ['delivered', 'paid', 'shipped', 'ready-to-dispatched', 'processing'];
+
+        $query = Order::select(
+            DB::raw("DATE_FORMAT(created_at, " . $this->getDateFormat($range) . ") as label"),
+            DB::raw("SUM(total_price) as revenue")
+        )
+            ->where('supplier_user_id', $supplierId)
+            ->whereIn('order_status', $validStatuses)
+            ->groupBy('label')
+            ->orderBy('label');
+        return response()->json($query->get());
+    }
+
+    private function getDateFormat($range)
+    {
+        return match ($range) {
+            'daily' => "'%Y-%m-%d'",
+            'weekly' => "'%Y-%u'", // Year-week number
+            'monthly' => "'%Y-%m'",
+            'yearly' => "'%Y'",
+            default => "'%Y-%m-%d'"
+        };
+    }
+
 
 
 

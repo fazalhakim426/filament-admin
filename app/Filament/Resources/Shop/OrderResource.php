@@ -16,6 +16,7 @@ use App\Enums\PaymentStatus;
 use App\Models\Deposit;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\ProductVariant;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Tables;
@@ -361,60 +362,25 @@ class OrderResource extends Resource
                 ->required()
                 ->preload()
                 ->options(fn(callable $get) => \App\Models\Address::where('user_id', $get('customer_user_id'))->pluck('name', 'id'))
+                ->createOptionForm([
+                    Forms\Components\TextInput::make('name')->required(),
+                    Forms\Components\TextInput::make('email')->email()->required(),
+                    Forms\Components\TextInput::make('phone')->nullable(),
+                    Forms\Components\TextInput::make('whatsapp')->nullable(),
+                    Forms\Components\TextInput::make('address')->required(),
+                    Forms\Components\TextInput::make('street')->nullable(),
+                    Forms\Components\TextInput::make('zip')->nullable(),
+                    Forms\Components\Select::make('country_id')->relationship('country', 'name')->required(),
+                    Forms\Components\Select::make('state_id')->relationship('state', 'name')->required(),
+                    Forms\Components\Select::make('city_id')->relationship('city', 'name')->required(),
+                    Forms\Components\Select::make('user_id')->relationship('user', 'name')->required(),
+                ])
                 ->reactive(), // Reacts when customer_user_id changes
-
-
-            // ->createOptionForm([
-            //     Forms\Components\TextInput::make('name')
-            //         ->required()
-            //         ->maxLength(255),
-
-            //     Forms\Components\TextInput::make('email')
-            //         ->label('Email address')
-            //         ->required()
-            //         ->email()
-            //         ->maxLength(255)
-            //         ->unique(),
-
-            //     Forms\Components\TextInput::make('phone')
-            //         ->maxLength(255),
-
-            //     // Forms\Components\Select::make('gender')
-            //     //     ->placeholder('Select gender')
-            //     //     ->options([
-            //     //         'male' => 'Male',
-            //     //         'female' => 'Female',
-            //     //     ])
-            //     //     ->required()
-            //     //     ->native(false),
-            // ])
-            // ->createOptionAction(function (Action $action) {
-            //     return $action
-            //         ->modalHeading('Create customer')
-            //         ->modalSubmitActionLabel('Create customer')
-            //         ->modalWidth('lg');
-            // })
-
-            // Forms\Components\ToggleButtons::make('payment_status')
-            //     ->inline()
-            //     ->options(PaymentStatus::class)
-            //     ->required(),
+ 
             Forms\Components\ToggleButtons::make('order_status')
                 ->inline()
                 ->options(OrderStatus::class)
                 ->required(),
-
-            // Forms\Components\Select::make('currency')
-            //     ->searchable()
-            //     ->getSearchResultsUsing(fn (string $query) => Currency::where('name', 'like', "%{$query}%")->pluck('name', 'id'))
-            //     ->getOptionLabelUsing(fn ($value): ?string => Currency::firstWhere('id', $value)?->getAttribute('name'))
-            //     ->required(),
-
-            // AddressForm::make('address')
-            //     ->columnSpan('full'),
-
-            // Forms\Components\MarkdownEditor::make('notes')
-            //     ->columnSpan('full'),
         ];
     }
 
@@ -423,18 +389,20 @@ class OrderResource extends Resource
         return Repeater::make('order_items')
             ->relationship('items')
             ->schema([
+                // Product Selection
                 Forms\Components\Select::make('product_id')
                     ->label('Product')
                     ->options(Product::query()->pluck('name', 'id'))
                     ->required()
                     ->reactive()
-                    ->afterStateUpdated(function ($state, Forms\Set $set) {
+                    ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
                         $product = Product::find($state); 
                         if ($product && $product->supplier_user_id) {
-                            $set('price', $product->unit_selling_price ?? 0);
-                            $set('supplier_user_id', $product->supplier_user_id); // Auto-set supplier ID
+                            // $set('price', $product->unit_selling_price ?? 0);
+                            $set('supplier_user_id', $product->supplier_user_id);
+                            $set('product_variant_id', null); // reset variant if product changes
                         } else {
-                            $set('product_id', null); // Reset product selection if no supplier
+                            $set('product_id', null);
                             Notification::make()
                                 ->title('This product does not have a supplier. Please add a supplier first.')
                                 ->danger()
@@ -443,40 +411,63 @@ class OrderResource extends Resource
                     })
                     ->distinct()
                     ->disableOptionsWhenSelectedInSiblingRepeaterItems()
-                    ->columnSpan([
-                        'md' => 5,
-                    ])
+                    ->columnSpan(['md' => 5])
                     ->searchable(),
-
+    
+                // Product Variant Selection
+                Forms\Components\Select::make('product_variant_id')
+                    ->label('Variant')
+                    ->options(function (Forms\Get $get) {
+                        $productId = $get('product_id');
+                        if (!$productId) return [];
+                        return \App\Models\ProductVariant::where('product_id', $productId)
+                            ->pluck('sku', 'id'); // Or you can display more detailed label
+                    })
+                    ->required()
+                    ->reactive()
+                    ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
+                        $variant = ProductVariant::find($state); 
+                        if ($variant && $variant->stock_quantity>0) {
+                            $set('price', $variant->unit_selling_price ?? 0);
+                            $set('product_variant_id', $variant->id); // reset variant if product changes 
+                        } else {
+                            $set('product_variant_id', null);
+                            Notification::make()
+                                ->title('Out of stock.')
+                                ->danger()
+                                ->send();
+                        }
+                    })
+                    ->columnSpan(['md' => 4])
+                    ->searchable(),
+    
+                // Quantity
                 Forms\Components\TextInput::make('quantity')
                     ->label('Quantity')
                     ->numeric()
                     ->default(1)
-                    ->columnSpan([
-                        'md' => 2,
-                    ])
+                    ->columnSpan(['md' => 2])
                     ->required(),
-
+    
+                // Price
                 Forms\Components\TextInput::make('price')
                     ->label('Unit Price')
                     ->disabled()
                     ->dehydrated()
                     ->numeric()
                     ->required()
-                    ->columnSpan([
-                        'md' => 3,
-                    ]),
-
-                Forms\Components\Hidden::make('supplier_user_id') // Auto-filled supplier ID
+                    ->columnSpan(['md' => 3]),
+    
+                // Hidden Supplier Field
+                Forms\Components\Hidden::make('supplier_user_id')
                     ->required(),
             ])
             ->defaultItems(1)
             ->hiddenLabel()
-            ->columns([
-                'md' => 10,
-            ])
+            ->columns(['md' => 12])
             ->required();
     }
+    
     protected static function handlePayment(Order $order, $amount, $description = null)
     {
         $order->update(['payment_status' => 'paid']);

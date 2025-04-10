@@ -29,7 +29,27 @@ class InventoryMovementController extends Controller
     }
     function index()
     {
-        return $this->json(200, true, 'Inventory list', InventoryMovementResource::collection(InventoryMovement::where('supplier_user_id', Auth::id())->with('product.productVariants.variantOptions')->get()));
+       $inventoryMovements= InventoryMovement::where('supplier_user_id', Auth::id())
+        ->with('product.productVariants.variantOptions')
+        ->paginate(request('per_page', 15)); 
+        return $this->json(200, true, 'Inventory list', [
+            'data' => 
+            InventoryMovementResource::collection($inventoryMovements),
+            'meta' => [
+                'current_page' => $inventoryMovements->currentPage(),
+                'last_page' => $inventoryMovements->lastPage(),
+                'per_page' => $inventoryMovements->perPage(),
+                'total' => $inventoryMovements->total(),
+                'from' => $inventoryMovements->firstItem(),
+                'to' => $inventoryMovements->lastItem(),
+            ],
+            'links' => [
+                'first' => $inventoryMovements->url(1),
+                'last' => $inventoryMovements->url($inventoryMovements->lastPage()),
+                'prev' => $inventoryMovements->previousPageUrl(),
+                'next' => $inventoryMovements->nextPageUrl(),
+            ]
+        ]);
     }
     function show($id)
     {

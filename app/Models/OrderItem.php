@@ -7,8 +7,7 @@ use Illuminate\Support\Facades\DB;
 
 class OrderItem extends Model
 {
-
-    //timestamp false
+ 
     public $timestamps  = false;
 
     protected $fillable = [
