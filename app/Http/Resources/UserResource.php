@@ -29,6 +29,8 @@ class UserResource extends JsonResource
             "referral_code" => $this->referral_code,
             "balance" => $this->balance,
             "city" => new CityResource($this->city),
+            "state" =>  $this->state,
+            "country" => new CountryResource($this->country),
             'created_at' => $this->created_at->diffForHumans(),
             'updated_at' => $this->updated_at->diffForHumans()
         ];

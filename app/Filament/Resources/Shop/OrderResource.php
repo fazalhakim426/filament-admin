@@ -256,13 +256,6 @@ class OrderResource extends Resource
             ]);
     }
 
-    public static function getRelations(): array
-    {
-        return [
-            // RelationManagers\PaymentsRelationManager::class,
-        ];
-    }
-
     public static function getWidgets(): array
     {
         return [
@@ -312,6 +305,7 @@ class OrderResource extends Resource
     }
 
     /** @return Forms\Components\Component[] */
+    /** @return Forms\Components\Component[] */
     public static function getDetailsFormSchema(): array
     {
         return [
@@ -323,6 +317,21 @@ class OrderResource extends Resource
                 ->maxLength(32)
                 ->unique(Order::class, 'warehouse_number', ignoreRecord: true),
 
+
+            // Add Supplier Select Field here
+            Forms\Components\Select::make('supplier_user_id')
+                ->label('Supplier')
+                ->relationship('supplierUser', 'name', function (Builder $query) {
+                    // Filter users with the 'Supplier' role
+                    $query->whereHas('roles', function ($query) {
+                        $query->where('name', 'supplier'); // Assuming your roles are stored by name
+                    });
+                })
+                ->searchable()
+                ->required()
+                ->preload()
+                ->disabled(fn($get) => $get('order_id') !== null)
+                ->reactive(),
             Forms\Components\Select::make('customer_user_id')
                 ->label('Customer')
                 ->relationship('customerUser', 'name', function (Builder $query) {
@@ -335,6 +344,7 @@ class OrderResource extends Resource
                 ->required()
                 ->preload()
                 ->reactive(),
+
             Forms\Components\Select::make('sender_id')
                 ->relationship('sender', 'name')
                 ->searchable()
@@ -376,7 +386,7 @@ class OrderResource extends Resource
                     Forms\Components\Select::make('user_id')->relationship('user', 'name')->required(),
                 ])
                 ->reactive(), // Reacts when customer_user_id changes
- 
+
             Forms\Components\ToggleButtons::make('order_status')
                 ->inline()
                 ->options(OrderStatus::class)
@@ -384,19 +394,26 @@ class OrderResource extends Resource
         ];
     }
 
+
     public static function getItemsRepeater(): Repeater
     {
         return Repeater::make('order_items')
             ->relationship('items')
             ->schema([
-                // Product Selection
                 Forms\Components\Select::make('product_id')
                     ->label('Product')
-                    ->options(Product::query()->pluck('name', 'id'))
+                    ->options(function (Forms\Get $get){
+                        $supplierUserId = $get('supplier_user_id');
+                        if (!$supplierUserId){
+                            return Product::query()->pluck('name', 'id'); 
+                        } 
+                        return Product::where('supplier_user_id', $supplierUserId)
+                            ->pluck('name', 'id');
+                    })
                     ->required()
                     ->reactive()
                     ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
-                        $product = Product::find($state); 
+                        $product = Product::find($state);
                         if ($product && $product->supplier_user_id) {
                             // $set('price', $product->unit_selling_price ?? 0);
                             $set('supplier_user_id', $product->supplier_user_id);
@@ -413,7 +430,7 @@ class OrderResource extends Resource
                     ->disableOptionsWhenSelectedInSiblingRepeaterItems()
                     ->columnSpan(['md' => 5])
                     ->searchable(),
-    
+
                 // Product Variant Selection
                 Forms\Components\Select::make('product_variant_id')
                     ->label('Variant')
@@ -426,10 +443,10 @@ class OrderResource extends Resource
                     ->required()
                     ->reactive()
                     ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
-                        $variant = ProductVariant::find($state); 
-                        if ($variant && $variant->stock_quantity>0) {
+                        $variant = ProductVariant::find($state);
+                        if ($variant && $variant->stock_quantity > 0) {
                             $set('price', $variant->unit_selling_price ?? 0);
-                            $set('product_variant_id', $variant->id); // reset variant if product changes 
+                            $set('product_variant_id', $variant->id); // reset variant if product changes
                         } else {
                             $set('product_variant_id', null);
                             Notification::make()
@@ -440,7 +457,7 @@ class OrderResource extends Resource
                     })
                     ->columnSpan(['md' => 4])
                     ->searchable(),
-    
+
                 // Quantity
                 Forms\Components\TextInput::make('quantity')
                     ->label('Quantity')
@@ -448,7 +465,7 @@ class OrderResource extends Resource
                     ->default(1)
                     ->columnSpan(['md' => 2])
                     ->required(),
-    
+
                 // Price
                 Forms\Components\TextInput::make('price')
                     ->label('Unit Price')
@@ -457,7 +474,7 @@ class OrderResource extends Resource
                     ->numeric()
                     ->required()
                     ->columnSpan(['md' => 3]),
-    
+
                 // Hidden Supplier Field
                 Forms\Components\Hidden::make('supplier_user_id')
                     ->required(),
@@ -467,7 +484,8 @@ class OrderResource extends Resource
             ->columns(['md' => 12])
             ->required();
     }
-    
+
+
     protected static function handlePayment(Order $order, $amount, $description = null)
     {
         $order->update(['payment_status' => 'paid']);

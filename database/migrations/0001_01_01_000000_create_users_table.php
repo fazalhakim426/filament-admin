@@ -93,10 +93,12 @@ return new class extends Migration
             $table->string('business_name');
             $table->string('contact_person')->nullable();
             $table->string('cnic')->nullable();
+            
             $table->string('bank_name')->nullable();
             $table->string('bank_iban')->nullable();
             $table->string('bank_account_number')->nullable();
             $table->string('bank_branch')->nullable();
+
             $table->string('website')->nullable();
             $table->string('supplier_type')->nullable();
             $table->foreignId('category_id')->nullable()->constrained('categories');

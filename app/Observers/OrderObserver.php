@@ -13,30 +13,7 @@ class OrderObserver
 {
     public function creating(Order $order): void
     {
-        $order->warehouse_number = $order->generateWarehouseNumber();
-    
-        $items = $order->items ?? collect(); // This should be a relationship or array
-    
-        // Get the first item to extract supplier info
-        $firstItem = $items->first();
-    
-        if ($firstItem) {
-            // From variant -> product -> supplier
-            if ($firstItem->product_variant_id) {
-                $variant = \App\Models\ProductVariant::find($firstItem->product_variant_id);
-                if ($variant && $variant->product) {
-                    $order->supplier_user_id = $variant->product->supplier_user_id;
-                }
-            }
-    
-            // If variant missing, try from product_id
-            elseif ($firstItem->product_id) {
-                $product = \App\Models\Product::find($firstItem->product_id);
-                if ($product) {
-                    $order->supplier_user_id = $product->supplier_user_id;
-                }
-            }
-        }
+        $order->warehouse_number = $order->generateWarehouseNumber(); 
     }
     
     public function created(Order $order): void

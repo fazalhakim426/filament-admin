@@ -37,8 +37,10 @@ class SupplierDetailResource extends JsonResource
             'bank_branch' => $this->bank_branch, 
             'bank_account_number' => $this->bank_account_number,
             'bank_iban' => $this->bank_iban,
-            'term_of_services' => $this->term_of_services,
-
+            'term_of_services' => $this->term_of_services,             
+            'city'=> $this->city,
+            'state'=> $this->state,
+            'country'=>new CountryResource($this->country),
         ];
     }
 }

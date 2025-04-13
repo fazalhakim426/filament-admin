@@ -136,6 +136,32 @@ class SupplierResource extends Resource
                             ->required(),
                         Forms\Components\TextInput::make('contact_person')
                             ->label('Contact Person'),
+
+                        Forms\Components\TextInput::make('bank_name')
+                            ->label('Bank Name')
+                            ->required()
+                            ->maxLength(100),
+
+                        Forms\Components\TextInput::make('bank_iban')
+                            ->label('IBAN Number')
+                            ->required()
+                            ->minLength(14)
+                            ->maxLength(24) ,
+
+                        Forms\Components\TextInput::make('bank_account_number')
+                            ->label('Account Number')
+                            ->required()
+                            ->numeric()
+                            ->minLength(8)
+                            ->maxLength(20),
+
+                        Forms\Components\TextInput::make('bank_branch')
+                            ->label('Bank Branch')
+                            ->required()
+                            ->maxLength(100),
+
+
+
                         Forms\Components\TextInput::make('website')
                             ->label('Website'),
                         Select::make('supplier_type')
@@ -270,9 +296,30 @@ class SupplierResource extends Resource
             ->filters([
                 // Tables\Filters\TrashedFilter::make(),
             ])
+
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\DeleteAction::make()
+                    ->action(function (User $record) {
+                        try {
+                            $record->delete();
+                        } catch (\Illuminate\Database\QueryException $e) {
+                            if ($e->getCode() === '23000') {
+                                Notification::make()
+                                    ->title('Unable to delete supplier')
+                                    ->body('This supplier is linked to inventory records and cannot be deleted.')
+                                    ->danger()
+                                    ->persistent()
+                                    ->send();
+
+                                // You can optionally stop the action here
+                                return;
+                            }
+
+                            throw $e; // Rethrow for other exceptions
+                        }
+                    }),
+
             ])
             ->groupedBulkActions([
                 Tables\Actions\DeleteBulkAction::make()

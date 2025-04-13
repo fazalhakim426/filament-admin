@@ -172,7 +172,24 @@ class CustomerResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\DeleteAction::make()
+                ->action(function (User $record) {
+                    try {
+                        $record->delete();
+                    } catch (\Illuminate\Database\QueryException $e) {
+                        if ($e->getCode() === '23000') {
+                            Notification::make()
+                                ->title('Unable to delete supplier')
+                                ->body('This Customer is linked to other records.')
+                                ->danger()
+                                ->persistent()
+                                ->send();
+             
+                            return;
+                        } 
+                        throw $e;
+                    }
+                }),
             ])
             ->groupedBulkActions([
                 Tables\Actions\DeleteBulkAction::make()
