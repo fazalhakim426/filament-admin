@@ -2,8 +2,10 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Review;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Cache;
 
 class SupplierDetailResource extends JsonResource
 {
@@ -13,9 +15,18 @@ class SupplierDetailResource extends JsonResource
      * @return array<string, mixed>
      */
     public function toArray(Request $request): array
-    {
+    { 
+        $cacheKey = 'average_rating_supplier_' . $this->user_id;
+        
+        $averageRating = Cache::remember($cacheKey, now()->addMinutes(30), function () {
+            return Review::whereHas('product', function ($query) {
+                $query->where('supplier_user_id', $this->user_id);
+            })->avg('rating_stars');
+        });
         return [
             'business_name' => $this->business_name,
+            'totol_products' => $this->user->products->count(),
+            'average_rating' => round($averageRating),
             'website' => $this->website,
             'supplier_type' => $this->supplier_type,
             'category' => new CategoryResource($this->category),

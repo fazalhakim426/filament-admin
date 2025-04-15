@@ -34,5 +34,13 @@ class ProductFactory extends Factory
             'manzil_choice' => $this->faker->boolean(50), 
         ];
     }
- 
+    public function configure()
+    {
+        return $this->afterCreating(function (Product $product) {
+            // Create 3 random specifications per product
+            ProductSpecification::factory()->count(3)->create([
+                'product_id' => $product->id,
+            ]);
+        });
+    }
 }

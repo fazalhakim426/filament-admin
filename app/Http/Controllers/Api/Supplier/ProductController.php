@@ -56,7 +56,10 @@ class ProductController extends Controller
             $query->where('is_active', $params['is_active'] == 'true' ? true : false);
         }
         $products = $query
-            ->with('productVariants.variantOptions','reviews')
+            ->with([
+                'productVariants',
+                'reviews'
+            ])
             ->paginate(request('per_page', 15));
 
         return $this->json(200, true, 'Products retrieved successfully.', [
@@ -81,7 +84,8 @@ class ProductController extends Controller
     public function show(Product $product)
     {
         return $this->json(200, true, 'Show product', new ProductResource($product->load(
-            'productVariants.variantOptions','reviews'
+            'productVariants.variantOptions',
+            'reviews'
         )));
     }
     public function store(Request $request)
@@ -90,13 +94,13 @@ class ProductController extends Controller
             'sub_category_id' => 'required|exists:sub_categories,id',
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'variants' => 'nullable|array', 
+            'variants' => 'nullable|array',
             'variants.*.sku' => 'required|string|max:255|unique:product_variants,sku',
-            'variants.*.description' => 'nullable|string',  
+            'variants.*.description' => 'nullable|string',
             'variants.*.media' => 'required|array',
-            'variants.*.media.*' => 'file|mimes:jpeg,png,jpg,gif,svg,mp4,avi,mov,webm|max:20480', 
+            'variants.*.media.*' => 'file|mimes:jpeg,png,jpg,gif,svg,mp4,avi,mov,webm|max:20480',
             'variants.*.unit_selling_price' => 'required|numeric|min:0',
-            'variants.*.options' => 'nullable|array',  
+            'variants.*.options' => 'nullable|array',
             'variants.*.options.*.attribute_name' => 'required|string|max:255',
             'variants.*.options.*.attribute_value' => 'required|string|max:255',
         ]);
@@ -116,7 +120,7 @@ class ProductController extends Controller
                 'category_id' => $validated['category_id'],
                 'sub_category_id' => $validated['sub_category_id'],
                 'name' => $validated['name'],
-                'description' => $validated['description']??'',
+                'description' => $validated['description'] ?? '',
                 'supplier_user_id' => Auth::id()
             ]);
 
@@ -138,7 +142,7 @@ class ProductController extends Controller
                                 'attribute_value' => $option['attribute_value'],
                             ]);
                         }
-                    } 
+                    }
                     // ✅ Handle uploaded images/videos — move this inside the loop
                     if ($request->hasFile("variants.$index.media")) {
                         foreach ($request->file("variants.$index.media") as $mediaFile) {
@@ -151,7 +155,6 @@ class ProductController extends Controller
                             ]);
                         }
                     }
-                    
                 }
             }
 
@@ -172,11 +175,13 @@ class ProductController extends Controller
             'description' => 'nullable|string',
             'variants' => 'required|array',
             'variants.*.id' => 'nullable|exists:product_variants,id',
-            'variants.*.description' => 'nullable|string', 
+            'variants.*.description' => 'nullable|string',
             'variants.*.media' => 'array',
-            'variants.*.media.*' => 'file|mimes:jpeg,png,jpg,gif,svg,mp4,avi,mov,webm|max:20480', 
+            'variants.*.media.*' => 'file|mimes:jpeg,png,jpg,gif,svg,mp4,avi,mov,webm|max:20480',
             'variants.*.sku' => [
-                'required', 'string', 'max:255',
+                'required',
+                'string',
+                'max:255',
                 function ($attribute, $value, $fail) use ($request) {
                     $variantId = data_get($request->variants, str_replace('variants.', '', explode('.', $attribute)[1]) . '.id');
                     if (!$variantId || !ProductVariant::where('id', '!=', $variantId)->where('sku', $value)->exists()) {
@@ -191,6 +196,10 @@ class ProductController extends Controller
             'variants.*.options.*.id' => 'nullable|exists:variant_options,id',
             'variants.*.options.*.attribute_name' => 'required|string|max:255',
             'variants.*.options.*.attribute_value' => 'required|string|max:255',
+
+            'specification.*' => 'nullable|array',
+            'specification.*.key' => 'required|string|max:255',
+            'specification.*.value' => 'required|string|max:255',
         ]);
 
         DB::beginTransaction();
@@ -203,7 +212,7 @@ class ProductController extends Controller
                 'category_id' => $validated['category_id'],
                 'sub_category_id' => $validated['sub_category_id'],
                 'name' => $validated['name'],
-                'description' => $validated['description']??'',
+                'description' => $validated['description'] ?? '',
             ]);
 
             // Handle Variants
@@ -211,20 +220,20 @@ class ProductController extends Controller
                 $existingVariantIds = $product->productVariants()->pluck('id')->toArray();
                 $updatedVariantIds = [];
 
-                foreach ($validated['variants'] as $index=>$variantData) {
+                foreach ($validated['variants'] as $index => $variantData) {
 
                     if (isset($variantData['id']) && in_array($variantData['id'], $existingVariantIds)) {
                         // Update existing variant
-                     
+
                         $variant = ProductVariant::find($variantData['id']);
                         $variant->update([
                             'sku' => $variantData['sku'],
                             'unit_selling_price' => $variantData['unit_selling_price'],
-                            'description' => $variantData['description']??'',
+                            'description' => $variantData['description'] ?? '',
 
                         ]);
                         if (!empty($variantData['delete_media_ids'])) {
-                            foreach ($variantData['delete_media_ids'] as $mediaId) { 
+                            foreach ($variantData['delete_media_ids'] as $mediaId) {
                                 $media = $variant->images()->find($mediaId);
                                 if ($media) {
                                     Storage::disk('public')->delete($media->url);
@@ -244,14 +253,14 @@ class ProductController extends Controller
                         foreach ($request->file("variants.$index.media") as $mediaFile) {
                             $filePath = $mediaFile->store('variant_media', 'public');
                             $type = str_starts_with($mediaFile->getMimeType(), 'video') ? 'video' : 'image';
-                    
+
                             $variant->images()->create([
                                 'url' => $filePath,
                                 'type' => $type,
                             ]);
                         }
                     }
-                    
+
 
                     $updatedVariantIds[] = $variant->id;
 
@@ -277,16 +286,19 @@ class ProductController extends Controller
                             }
                             $updatedOptionIds[] = $variantOption->id;
                         }
- 
+
                         $variant->variantOptions()->whereNotIn('id', $updatedOptionIds)->delete();
                     }
-
-              
-                    
                 }
- 
+
                 $product->productVariants()->whereNotIn('id', $updatedVariantIds)->delete();
             }
+            // foreach ($validated['specifications'] as $option) {
+            //     $variant->variantOptions()->create([
+            //         'key' => strtolower($option['key']), // normalize
+            //         'value' => $option['value'],
+            //     ]);
+            // }
 
             DB::commit();
             return $this->json(200, true, 'Product updated successfully!', new ProductResource($product->load('productVariants.variantOptions')));
@@ -316,7 +328,7 @@ class ProductController extends Controller
     {
         $product->update(['is_active' => false]);
 
-        return $this->json(200, true, 'Product deactivated successfully',new ProductResource($product->load('productVariants.variantOptions')));
+        return $this->json(200, true, 'Product deactivated successfully', new ProductResource($product->load('productVariants.variantOptions')));
     }
 
 

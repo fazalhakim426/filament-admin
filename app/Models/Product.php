@@ -62,4 +62,8 @@ class Product extends Model
     function productVariants() {
         return $this->hasMany(ProductVariant::class);
     }
+    public function specifications()
+    {
+        return $this->hasMany(ProductSpecification::class);
+    }
 }

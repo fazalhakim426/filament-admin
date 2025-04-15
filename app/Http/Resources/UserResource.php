@@ -35,7 +35,7 @@ class UserResource extends JsonResource
             'updated_at' => $this->updated_at->diffForHumans()
         ];
 
-        if (in_array('Supplier', $this->roles->pluck('name')->toArray())) {
+        if (in_array('Supplier', $this->roles->pluck('name')->toArray())||$this->supplierDetail) {
             $data['supplier_detail'] = new SupplierDetailResource($this->supplierDetail);
         }
         return $data;

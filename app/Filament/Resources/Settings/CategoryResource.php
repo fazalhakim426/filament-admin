@@ -7,6 +7,8 @@ use App\Filament\Resources\Settings\CategoryResource\RelationManagers;
 use App\Models\Category;
 use Filament\Forms;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
@@ -36,6 +38,30 @@ class CategoryResource extends Resource
                 FileUpload::make('image')
                     ->image()
                     ->nullable(),
+                    Repeater::make('images')
+                    ->label('Category banners')
+                    ->relationship('images')
+                    ->schema([
+                        Select::make('type')
+                            ->options([
+                                'image' => 'Image',
+                                'video' => 'Video',
+                            ])
+                            ->default('image')
+                            ->required(),
+
+                        FileUpload::make('url')
+                            ->label('Upload File')
+                            ->preserveFilenames()
+                            ->directory('products/media')
+                            ->required()
+                            ->image()
+                            ->acceptedFileTypes(['image/*', 'video/mp4', 'video/avi', 'video/mov', 'video/webm'])
+                            ->maxSize(102400),
+                    ])
+                    ->minItems(1)
+                    ->maxItems(10)
+                    ->columnSpanFull(),
             ]);
     }
 

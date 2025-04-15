@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api\Customer;
 use App\Models\Product;
 use App\Http\Controllers\Controller; 
 use App\Http\Resources\ProductResource;
+use App\Http\Resources\ReviewResource;
+use App\Models\Review;
 use App\Trait\CustomRespone; 
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 class ProductController extends Controller
@@ -81,11 +83,19 @@ class ProductController extends Controller
     }
     function show(Product $product)
     {
-        $product->load(['productVariants.images','supplierUser' ,'category', 'subCategory', 'productVariants.variantOptions', 'reviews.user']);
+        $product->load(['productVariants.images','supplierUser' ,'category', 'subCategory', 'productVariants.variantOptions', 
+        'reviews' => function ($query) {
+            $query->latest()->take(5);
+        },
+        'reviews.user']); 
+        $averageRating = $product->reviews()->avg('rating_stars');
         return response()->json([
             'success' => true,
             'message' => 'Product details',
-            'data' => new ProductResource($product)
+            'data' => (new ProductResource($product))->additional([
+                'average_rating' => $averageRating,
+            ])
         ]);
     }
+     
 }

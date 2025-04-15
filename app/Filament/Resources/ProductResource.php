@@ -131,10 +131,29 @@ class ProductResource extends Resource
                     ->minItems(1)
                     ->maxItems(10)
                     ->columnSpanFull(),
+
+                // Repeater::make('specifications')
+                //     ->label('Specifications')
+                //     ->relationship('specifications')
+                //     ->schema([
+                //         TextInput::make('key')
+                //             ->label('Specification Key')
+                //             ->placeholder('e.g. Color, Material')
+                //             ->required(),
+
+                //         TextInput::make('value')
+                //             ->label('Specification Value')
+                //             ->placeholder('e.g. Black, Cotton')
+                //             ->required(),
+                //     ])
+                //     ->minItems(1)
+                //     ->maxItems(10)
+                //     ->columnSpanFull(),
+
             ]);
     }
-   
-    
+
+
 
     public static function table(Table $table): Table
     {
@@ -144,7 +163,7 @@ class ProductResource extends Resource
                     ->label('Supplier')
                     ->searchable()
                     ->sortable(),
-                    ImageColumn::make('variant_images')
+                ImageColumn::make('variant_images')
                     ->label('Images')
                     ->getStateUsing(function ($record) {
                         return optional($record->productVariants->first())
@@ -153,12 +172,12 @@ class ProductResource extends Resource
                     })
                     ->circular()
                     ->stacked(),
-                
+
 
                 TextColumn::make('name')
                     ->searchable(),
 
-                    TextColumn::make('id')
+                TextColumn::make('id')
                     ->label('Variants & Options')
                     ->formatStateUsing(function ($record) {
                         return $record->productVariants
@@ -168,26 +187,26 @@ class ProductResource extends Resource
                                     ->take(3)
                                     ->map(fn($opt) => "{$opt->attribute_name}: {$opt->attribute_value}")
                                     ->join(', ');
-                
+
                                 return "SKU - {$variant->sku} ({$options}) - RS {$variant->unit_selling_price}";
                             })
-                            ->join('<br><br>');  
+                            ->join('<br><br>');
                     })
                     ->html()
                     ->wrap()
                     ->limit(200),
-                
-                
-                
 
-                    IconColumn::make('is_active')
+
+
+
+                IconColumn::make('is_active')
                     ->label('Active')
-                    ->boolean(), 
+                    ->boolean(),
 
-                    TextColumn::make('category.name')
-                        ->label('Category')
-                        ->sortable()
-                        ->searchable(),
+                TextColumn::make('category.name')
+                    ->label('Category')
+                    ->sortable()
+                    ->searchable(),
 
                 TextColumn::make('created_at')
                     ->dateTime()
@@ -198,22 +217,22 @@ class ProductResource extends Resource
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make()
-                ->action(function (Product $record) {
-                    try {
-                        $record->delete();
-                    } catch (\Illuminate\Database\QueryException $e) {
-                        if ($e->getCode() === '23000') {
-                            Notification::make()
-                                ->title('Unable to delete supplier')
-                                ->body('This product is linked to inventory records and cannot be deleted.')
-                                ->danger()
-                                ->persistent()
-                                ->send(); 
-                            return;
-                        } 
-                        throw $e;  
-                    }
-                }),
+                    ->action(function (Product $record) {
+                        try {
+                            $record->delete();
+                        } catch (\Illuminate\Database\QueryException $e) {
+                            if ($e->getCode() === '23000') {
+                                Notification::make()
+                                    ->title('Unable to delete supplier')
+                                    ->body('This product is linked to inventory records and cannot be deleted.')
+                                    ->danger()
+                                    ->persistent()
+                                    ->send();
+                                return;
+                            }
+                            throw $e;
+                        }
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -229,6 +248,5 @@ class ProductResource extends Resource
         return [
             'index' => Pages\ManageProducts::route('/'),
         ];
-    } 
-
+    }
 }

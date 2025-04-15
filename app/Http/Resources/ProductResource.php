@@ -56,6 +56,7 @@ class ProductResource extends JsonResource
         }
 
 
+        $averageRating = $this->reviews()->avg('rating_stars');
 
         return [
             'id' => $this->id,
@@ -70,15 +71,36 @@ class ProductResource extends JsonResource
             'available_sizes' => $sizes,
             'available_colors' => $colors,
 
+            // 'sku' => $this->variants->first()?->sku,
+            // 'price' => $this->variants->first()?->unit_selling_price,
+            // 'stock_quantity' => $this->variants->first()?->stock_quantity, 
+            // 'description' => $this->variants->first()?->description,
+            // 'images' => ImageResource::collection($this->variants->first()?->images), 
+            
             'size_color_combinations' => $sizeColorCombinations,
-            'product_variants' => ProductVariantResource::collection($variants),
+            'variant_mapping' => $variants->map(function ($variant) {
+                    $size = $variant->variantOptions->whereIn('attribute_name', ['size', 'Size'])->first()?->attribute_value;
+                    $color = $variant->variantOptions->whereIn('attribute_name', ['color', 'Color'])->first()?->attribute_value;
 
+                    return [
+                        'variant_id' => $variant->id,
+                        'size' => $size,
+                        'color' => $color,
+                        'stock_quantity' => $variant->stock_quantity,
+                        'in_stock' => $variant->stock_quantity > 0,
+                        'price' => $variant->unit_selling_price, // optional: include price per variant
+                    ];
+                })->filter(fn($v) => $v['size'] && $v['color'])->values(),
+
+
+            'product_variants' => ProductVariantResource::collection($variants), 
+            // 'specifications' => ProductSpecificationResource::collection($this->whenLoaded('specifications')),
             'category' => new CategoryResource($this->category),
             'sub_category' => new SubCategoryResource($this->subCategory),
             'reseller' => new ResellerResource($this->whenLoaded('reseller')),
-            'supplier' => new UserResource($this->whenLoaded('supplierUser')),
-
+            'supplier' => new UserResource($this->whenLoaded('supplierUser')), 
             'reviews' => ReviewResource::collection($this->whenLoaded('reviews')),
+            'average_rating' => round($averageRating),
             'created_at' => $this->created_at->diffForHumans(), // Human-readable format
             'updated_at' => $this->updated_at->diffForHumans(),
         ];

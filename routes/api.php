@@ -19,12 +19,17 @@ Route::post('reset-password', [AuthController::class, 'resetPassword']);
 Route::post('reset-password-auth', [AuthController::class, 'resetPasswordAuth'])->middleware(['auth:sanctum']);
 Route::post('forgot-password', [AuthController::class, 'forgotPassword']);
 
-Route::get('categories',[CategoryController::class, 'index']);
-Route::get('{category}/sub-categories',[CategoryController::class, 'subCategories']);
+Route::get('categories', [CategoryController::class, 'index']);
+Route::get('{category}/sub-categories', [CategoryController::class, 'subCategories']);
 Route::get('users', function () {
     return response()->json(
         UserResource::collection(User::all())
     );
+});
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('product/{product}/reviews', [\App\Http\Controllers\Api\Common\ProductReviewController::class, 'reviews']);
+    Route::apiResource('users', \App\Http\Controllers\Api\Common\UserController::class)->only('index', 'show');
+    Route::apiResource('banners', \App\Http\Controllers\Api\Common\HomeBannerController::class)->only('index', 'show');
 });
 Route::get('order/{warehouse}/trackings', [\App\Http\Controllers\Api\Supplier\OrderTrackingController::class, 'index']);
 
