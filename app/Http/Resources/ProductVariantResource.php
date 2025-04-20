@@ -24,9 +24,9 @@ class ProductVariantResource extends JsonResource
             'description' => $this->description,
             'images' => ImageResource::collection($this->images),
             'variant_options' => VariantOptionResource::collection($this->variantOptions),
+            'variants' => VariantKeyValueOptionResource::collection($this->variantOptions),
             'inventory_movements' => InventoryMovementResource::collection($this->whenLoaded('inventoryMovements')),
-            
-            
+             
         ];
     }
 }

@@ -12,8 +12,7 @@ class ReviewController extends Controller
 {
     use CustomRespone;
 
-    public function index()
-    {
+    public function index(){
         $reviews = Review::whereHas('product', function ($query) {
             $query->where('supplier_user_id', Auth::id());
         })

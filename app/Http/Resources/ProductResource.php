@@ -58,6 +58,12 @@ class ProductResource extends JsonResource
 
         $averageRating = $this->reviews()->avg('rating_stars');
 
+        $totalSold = $this->orderItems()
+        ->whereHas('order', function($query) {
+            $query->where('order_status', '!=', 'canceled');
+        })
+        ->sum('quantity');
+
         return [
             'id' => $this->id,
             'name' => $this->name,
@@ -71,6 +77,7 @@ class ProductResource extends JsonResource
             'available_sizes' => $sizes,
             'available_colors' => $colors,
 
+            'total_sold' => (int) $totalSold,
             // 'sku' => $this->variants->first()?->sku,
             // 'price' => $this->variants->first()?->unit_selling_price,
             // 'stock_quantity' => $this->variants->first()?->stock_quantity, 

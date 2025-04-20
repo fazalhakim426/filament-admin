@@ -44,6 +44,8 @@ Route::middleware(['auth:sanctum'])->prefix('supplier')->group(function () {
 
     Route::get('/analytics/products-sales', [\App\Http\Controllers\Api\Supplier\AnalyticsController::class, 'getProductSales']);
     Route::get('/analytics/revenue-history', [\App\Http\Controllers\Api\Supplier\AnalyticsController::class, 'getRevenueHistory']);
+    Route::get('/analytics/summary', [\App\Http\Controllers\Api\Supplier\AnalyticsController::class, 'getDashboardStats']);
+
 });
 
 // // Product Routes

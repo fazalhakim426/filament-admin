@@ -97,8 +97,8 @@ class ProductController extends Controller
             'variants' => 'nullable|array',
             'variants.*.sku' => 'required|string|max:255|unique:product_variants,sku',
             'variants.*.description' => 'nullable|string',
-            'variants.*.media' => 'required|array',
-            'variants.*.media.*' => 'file|mimes:jpeg,png,jpg,gif,svg,mp4,avi,mov,webm|max:20480',
+            'variants.*.images' => 'required|array',
+            'variants.*.images.*' => 'file|mimes:jpeg,png,jpg,gif,svg,mp4,avi,mov,webm|max:20480',
             'variants.*.unit_selling_price' => 'required|numeric|min:0',
             'variants.*.options' => 'nullable|array',
             'variants.*.options.*.attribute_name' => 'required|string|max:255',
@@ -144,10 +144,10 @@ class ProductController extends Controller
                         }
                     }
                     // ✅ Handle uploaded images/videos — move this inside the loop
-                    if ($request->hasFile("variants.$index.media")) {
-                        foreach ($request->file("variants.$index.media") as $mediaFile) {
-                            $filePath = $mediaFile->store('variant_media', 'public');
-                            $type = str_starts_with($mediaFile->getMimeType(), 'video') ? 'video' : 'image';
+                    if ($request->hasFile("variants.$index.images")) {
+                        foreach ($request->file("variants.$index.images") as $imagesFile) {
+                            $filePath = $imagesFile->store('variant_images', 'public');
+                            $type = str_starts_with($imagesFile->getMimeType(), 'video') ? 'video' : 'image';
 
                             $variant->images()->create([
                                 'url' => $filePath,
@@ -176,8 +176,8 @@ class ProductController extends Controller
             'variants' => 'required|array',
             'variants.*.id' => 'nullable|exists:product_variants,id',
             'variants.*.description' => 'nullable|string',
-            'variants.*.media' => 'array',
-            'variants.*.media.*' => 'file|mimes:jpeg,png,jpg,gif,svg,mp4,avi,mov,webm|max:20480',
+            'variants.*.images' => 'array',
+            'variants.*.images.*' => 'file|mimes:jpeg,png,jpg,gif,svg,mp4,avi,mov,webm|max:20480',
             'variants.*.sku' => [
                 'required',
                 'string',
@@ -192,7 +192,7 @@ class ProductController extends Controller
             ],
             'variants.*.unit_selling_price' => 'required|numeric|min:0',
             'variants.*.options' => 'nullable|array',
-            'variants.*.delete_media_ids' => 'array',
+            'variants.*.delete_images_ids' => 'array',
             'variants.*.options.*.id' => 'nullable|exists:variant_options,id',
             'variants.*.options.*.attribute_name' => 'required|string|max:255',
             'variants.*.options.*.attribute_value' => 'required|string|max:255',
@@ -232,12 +232,12 @@ class ProductController extends Controller
                             'description' => $variantData['description'] ?? '',
 
                         ]);
-                        if (!empty($variantData['delete_media_ids'])) {
-                            foreach ($variantData['delete_media_ids'] as $mediaId) {
-                                $media = $variant->images()->find($mediaId);
-                                if ($media) {
-                                    Storage::disk('public')->delete($media->url);
-                                    $media->delete();
+                        if (!empty($variantData['delete_images_ids'])) {
+                            foreach ($variantData['delete_images_ids'] as $imagesId) {
+                                $images = $variant->images()->find($imagesId);
+                                if ($images) {
+                                    Storage::disk('public')->delete($images->url);
+                                    $images->delete();
                                 }
                             }
                         }
@@ -249,10 +249,10 @@ class ProductController extends Controller
                         ]);
                     }
 
-                    if ($request->hasFile("variants.$index.media")) {
-                        foreach ($request->file("variants.$index.media") as $mediaFile) {
-                            $filePath = $mediaFile->store('variant_media', 'public');
-                            $type = str_starts_with($mediaFile->getMimeType(), 'video') ? 'video' : 'image';
+                    if ($request->hasFile("variants.$index.images")) {
+                        foreach ($request->file("variants.$index.images") as $imagesFile) {
+                            $filePath = $imagesFile->store('variant_images', 'public');
+                            $type = str_starts_with($imagesFile->getMimeType(), 'video') ? 'video' : 'image';
 
                             $variant->images()->create([
                                 'url' => $filePath,

@@ -9,11 +9,158 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use App\Models\Order;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\DB; 
+use App\Models\InventoryMovement; 
 
 class AnalyticsController extends Controller
-{ 
+{
+    
+        public function getDashboardStats(Request $request)
+        {
+            // Get the authenticated user (supplier)
+            $supplierId = auth()->id();
+    
+            // Total Sales (count of all completed orders)
+            $totalSales = DB::table('orders')
+                ->where('supplier_user_id', $supplierId)
+                // ->where('order_status', 'delivered')
+                ->count();
+    
+            // Total Orders (all orders regardless of status)
+            $totalOrders = DB::table('orders')
+                ->where('supplier_user_id', $supplierId)
+                ->count();
+    
+            // Total Revenue (sum of all completed order values)
+            $totalRevenue = DB::table('orders')
+                ->where('supplier_user_id', $supplierId)
+                // ->where('order_status', 'delivered')
+                ->sum('total_price');
+    
+            // Monthly Revenue (last 12 months)
+            $monthlyRevenue = DB::table('orders')
+                ->select(
+                    DB::raw('MONTH(created_at) as month'),
+                    DB::raw('YEAR(created_at) as year'),
+                    DB::raw('SUM(total_price) as revenue')
+                )
+                ->where('supplier_user_id', $supplierId)
+                // ->where('order_status', 'delivered')
+                ->where('created_at', '>=', Carbon::now()->subMonths(12))
+                ->groupBy('year', 'month')
+                ->orderBy('year', 'asc')
+                ->orderBy('month', 'asc')
+                ->get();
+    
+            // Format monthly data as array of values
+            $monthlyData = array_fill(0, 12, 0);
+            foreach ($monthlyRevenue as $record) {
+                $index = (int)$record->month - 1;
+                $monthlyData[$index] = (float)$record->revenue;
+            }
+    
+            // Weekly Revenue (last 8 weeks)
+            $weeklyRevenue = DB::table('orders')
+                ->select(
+                    DB::raw('WEEK(created_at) as week'),
+                    DB::raw('YEAR(created_at) as year'),
+                    DB::raw('SUM(total_price) as revenue')
+                )
+                ->where('supplier_user_id', $supplierId)
+                // ->where('order_status', 'delivered')
+                ->where('created_at', '>=', Carbon::now()->subWeeks(8))
+                ->groupBy('year', 'week')
+                ->orderBy('year', 'asc')
+                ->orderBy('week', 'asc')
+                ->get();
+    
+            // Format weekly data as array of values
+            $weeklyData = array_fill(0, 8, 0);
+            foreach ($weeklyRevenue as $record) {
+                $index = (int)$record->week - (int)Carbon::now()->subWeeks(8)->week;
+                if ($index >= 0 && $index < 8) {
+                    $weeklyData[$index] = (float)$record->revenue;
+                }
+            }
+    
+            // Today's Revenue
+            $todayRevenue = DB::table('orders')
+                ->where('supplier_user_id', $supplierId)
+                // ->where('order_status', 'delivered')
+                ->whereDate('created_at', Carbon::today())
+                ->sum('total_price');
+    
+            // Today's Orders
+            $todayOrders = DB::table('orders')
+                ->where('supplier_user_id', $supplierId)
+                ->whereDate('created_at', Carbon::today())
+                ->count();
+    
+            return response()->json([
+                'total_sales' => $totalSales,
+                'total_orders' => $totalOrders,
+                'total_revenue' => $totalRevenue,
+                'revenue_breakdown' => [
+                    'monthly' => $monthlyData,
+                    'weekly' => $weeklyData,
+                    'today' => [$todayRevenue]
+                ],
+                'today_orders' => $todayOrders
+            ]);
+        }
+    
 
+    // public function getDashboardStats()
+    // {
+    //     $now = Carbon::now();
+
+    //     // Total sale from inventory_movements (type: deduction, movement_type: sale)
+    //     $totalSale = InventoryMovement::where('type', 'deduction')
+    //         ->where('movement_type', 'sale')
+    //         ->sum('total_price');
+
+    //     // Total Orders (completed orders)
+    //     $totalOrders = Order::whereNotIn('order_status', ['canceled'])->count();
+
+    //     // Total Revenue (from deposits with type 'credit' or 'paid' orders)
+    //     $totalRevenue = Deposit::where('transaction_type', 'credit')->sum('amount');
+
+    //     // Revenue breakdowns
+    //     $monthlyRevenue = $this->getRevenueByPeriod('month', 12); // last 12 months
+    //     $weeklyRevenue = $this->getRevenueByPeriod('week', 4); // last 4 weeks
+    //     $todayRevenue = Deposit::whereDate('created_at', $now->toDateString())
+    //         ->where('transaction_type', 'credit')
+    //         ->sum('amount');
+
+    //     return response()->json([
+    //         'total_sale' => round($totalSale, 2),
+    //         'total_orders' => $totalOrders,
+    //         'total_revenue' => round($totalRevenue, 2),
+    //         'revenue' => [
+    //             'monthly' => $monthlyRevenue,
+    //             'weekly' => $weeklyRevenue,
+    //             'today' => [$todayRevenue],
+    //         ],
+    //     ]);
+    // }
+
+    // private function getRevenueByPeriod($period = 'month', $count = 12)
+    // {
+    //     $revenue = [];
+
+    //     for ($i = $count - 1; $i >= 0; $i--) {
+    //         $start = now()->copy()->sub($period . 's', $i)->startOf($period);
+    //         $end = now()->copy()->sub($period . 's', $i)->endOf($period);
+
+    //         $sum = Deposit::where('transaction_type', 'credit')
+    //             ->whereBetween('created_at', [$start, $end])
+    //             ->sum('amount');
+
+    //         $revenue[] = round($sum, 2);
+    //     }
+
+    //     return $revenue;
+    // }
     public function getMetrics(Request $request)
     {
         $supplierId = auth()->id(); // Or fetch from $request if needed
@@ -139,7 +286,7 @@ class AnalyticsController extends Controller
                                                       SUM(order_items.price) as total_revenue')
             ->join('products', 'order_items.product_id', '=', 'products.id')
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
-            ->where('orders.order_status', 'delivered') // Ensure the orders are delivered
+            // ->where('orders.order_status', 'delivered') // Ensure the orders are delivered
             ->where('order_items.supplier_user_id', $supplier->id) // Filter by the authenticated supplier
             ->groupBy('products.id')
             ->orderByDesc('total_revenue') // Order by total revenue

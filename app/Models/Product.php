@@ -48,10 +48,10 @@ class Product extends Model
             });
         });
     }
-    // public function images(): Attribute
-    // {
-    //     return Attribute::set(fn($value) => collect($value)->map(fn($file) => ['url' => $file]));
-    // }
+    public function images(): Attribute
+    {
+        return Attribute::set(fn($value) => collect($value)->map(fn($file) => ['url' => $file]));
+    }
  
     function reviews() {
         return $this->hasMany(Review::class);
@@ -66,4 +66,9 @@ class Product extends Model
     {
         return $this->hasMany(ProductSpecification::class);
     }
+    // In your Product model
+public function orderItems()
+{
+    return $this->hasMany(OrderItem::class);
+}
 }

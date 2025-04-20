@@ -21,7 +21,7 @@ Route::post('forgot-password', [AuthController::class, 'forgotPassword']);
 
 Route::get('categories', [CategoryController::class, 'index']);
 Route::get('{category}/sub-categories', [CategoryController::class, 'subCategories']);
-Route::get('users', function () {
+Route::get('dummy_users', function () {
     return response()->json(
         UserResource::collection(User::all())
     );

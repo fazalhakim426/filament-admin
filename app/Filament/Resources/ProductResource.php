@@ -163,15 +163,28 @@ class ProductResource extends Resource
                     ->label('Supplier')
                     ->searchable()
                     ->sortable(),
-                ImageColumn::make('variant_images')
+                    ImageColumn::make('variant_images')
                     ->label('Images')
                     ->getStateUsing(function ($record) {
-                        return optional($record->productVariants->first())
-                            ? $record->productVariants->first()->images->take(3)->pluck('url')
-                            : [];
+                        // Safely get the first variant with images
+                        $variant = $record->productVariants->firstWhere(fn($v) => $v->images->isNotEmpty());
+                        
+                        // Return empty array if no variant with images found
+                        if (!$variant) {
+                            return [];
+                        }
+                        
+                        // Get first 3 image URLs, filtering out any null values
+                        return $variant->images
+                            ->take(3)
+                            ->filter()
+                            ->pluck('url')
+                            ->filter()
+                            ->toArray();
                     })
                     ->circular()
-                    ->stacked(),
+                    ->stacked()
+                    ->default('No images available'),
 
 
                 TextColumn::make('name')
