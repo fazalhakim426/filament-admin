@@ -12,13 +12,35 @@ class ReviewController extends Controller
 {
     use CustomRespone;
 
-    public function index(){
-        $reviews = Review::whereHas('product', function ($query) {
-            $query->where('supplier_user_id', Auth::id());
-        })
-            ->with('product', 'user')
-            ->paginate(request('per_page', 15));
-
+    public function index()
+    {
+        $query = Review::whereHas('product', function ($q) {
+            $q->where('supplier_user_id', Auth::id());
+        });
+    
+        // Optional filters
+        if (request()->filled('rating')) {
+            $query->where('rating_stars', request('rating'));
+        }
+    
+        if (request()->filled('product_id')) {
+            $query->where('product_id', request('product_id'));
+        }
+    
+        if (request()->filled('user_id')) {
+            $query->where('user_id', request('user_id'));
+        }
+    
+        if (request()->filled('from_date')) {
+            $query->whereDate('created_at', '>=', request('from_date'));
+        }
+    
+        if (request()->filled('to_date')) {
+            $query->whereDate('created_at', '<=', request('to_date'));
+        }
+    
+        $reviews = $query->with('product', 'user')->paginate(request('per_page', 15));
+    
         return $this->json(200, true, 'Reviews retrieved successfully.', [
             'data' => ReviewResource::collection($reviews),
             'meta' => [
@@ -37,4 +59,5 @@ class ReviewController extends Controller
             ]
         ]);
     }
+    
 }
