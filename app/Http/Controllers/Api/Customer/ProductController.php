@@ -41,9 +41,9 @@ class ProductController extends Controller
                         $query->where('name', 'like', "%{$search}%")->orWhere('description', 'like', "%{$search}%");
                     })->orWhereHas('productVariants', function ($query) use ($search) {
                         $query->where('sku', 'like', "%{$search}%")
-                            ->orWhere('description', 'like', "%{$search}%")->orWhere('unit_selling_price', $search)
+                            ->orWhere('description', 'like', "%{$search}%")
                             ->orWhereHas('variantOptions', function ($query) use ($search) {
-                                $query->where('attribute_value', 'like', "%{$search}%");
+                                $query->where(' ', 'like', "%{$search}%");
                             });
                     })
                     ->orWhereHas('subCategory', function ($query) use ($search) {

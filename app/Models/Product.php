@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
-    use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class Product extends Model
 {
@@ -39,27 +39,18 @@ class Product extends Model
         return $this->hasMany(OrderItem::class);
     }
 
-    protected static function booted()
+   
+
+    function reviews()
     {
-        static::deleted(function ($product) {
-            $product->images()->each(function ($image) {
-                \Storage::disk('public')->delete($image->url); // Delete the image file
-                $image->delete(); // Delete the image record
-            });
-        });
-    }
-    public function images(): Attribute
-    {
-        return Attribute::set(fn($value) => collect($value)->map(fn($file) => ['url' => $file]));
-    }
- 
-    function reviews() {
         return $this->hasMany(Review::class);
     }
-    function inventoryMovements() {
+    function inventoryMovements()
+    {
         return $this->hasMany(InventoryMovement::class);
     }
-    function productVariants() {
+    function productVariants()
+    {
         return $this->hasMany(ProductVariant::class);
     }
     public function specifications()
@@ -67,8 +58,8 @@ class Product extends Model
         return $this->hasMany(ProductSpecification::class);
     }
     // In your Product model
-public function orderItems()
-{
-    return $this->hasMany(OrderItem::class);
-}
+    public function orderItems()
+    {
+        return $this->hasMany(OrderItem::class);
+    }
 }

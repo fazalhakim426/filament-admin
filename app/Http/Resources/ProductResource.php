@@ -76,14 +76,7 @@ class ProductResource extends JsonResource
             'sponsor' => (bool) $this->sponsor,
             'available_sizes' => $sizes,
             'available_colors' => $colors,
-
             'total_sold' => (int) $totalSold,
-            // 'sku' => $this->variants->first()?->sku,
-            // 'price' => $this->variants->first()?->unit_selling_price,
-            // 'stock_quantity' => $this->variants->first()?->stock_quantity, 
-            // 'description' => $this->variants->first()?->description,
-            // 'images' => ImageResource::collection($this->variants->first()?->images), 
-            
             'size_color_combinations' => $sizeColorCombinations,
             'variant_mapping' => $variants->map(function ($variant) {
                     $size = $variant->variantOptions->whereIn('attribute_name', ['size', 'Size'])->first()?->attribute_value;

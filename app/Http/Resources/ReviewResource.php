@@ -11,7 +11,7 @@ class ReviewResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'rating' => $this->rating_stars,
+            'rating' => round($this->rating_stars),
             'review_text' => $this->review_text,
             'created_at' => $this->created_at ? $this->created_at->toDateTimeString() : null,
             'updated_at' => $this->updated_at ? $this->updated_at->toDateTimeString() : null,

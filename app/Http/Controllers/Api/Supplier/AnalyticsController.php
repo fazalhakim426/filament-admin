@@ -15,100 +15,151 @@ use App\Models\InventoryMovement;
 class AnalyticsController extends Controller
 {
     
-        public function getDashboardStats(Request $request)
-        {
-            // Get the authenticated user (supplier)
-            $supplierId = auth()->id();
+    public function getDashboardStats(Request $request)
+    {
+        $supplierId = auth()->id();
     
-            // Total Sales (count of all completed orders)
-            $totalSales = DB::table('orders')
-                ->where('supplier_user_id', $supplierId)
-                // ->where('order_status', 'delivered')
-                ->count();
+        // Current values
+        $totalSales = DB::table('orders')
+            ->where('supplier_user_id', $supplierId)
+            ->count();
     
-            // Total Orders (all orders regardless of status)
-            $totalOrders = DB::table('orders')
-                ->where('supplier_user_id', $supplierId)
-                ->count();
+        $totalOrders = DB::table('orders')
+            ->where('supplier_user_id', $supplierId)
+            ->count();
     
-            // Total Revenue (sum of all completed order values)
-            $totalRevenue = DB::table('orders')
-                ->where('supplier_user_id', $supplierId)
-                // ->where('order_status', 'delivered')
-                ->sum('total_price');
+        $totalRevenue = DB::table('orders')
+            ->where('supplier_user_id', $supplierId)
+            ->sum('total_price');
     
-            // Monthly Revenue (last 12 months)
-            $monthlyRevenue = DB::table('orders')
-                ->select(
-                    DB::raw('MONTH(created_at) as month'),
-                    DB::raw('YEAR(created_at) as year'),
-                    DB::raw('SUM(total_price) as revenue')
-                )
-                ->where('supplier_user_id', $supplierId)
-                // ->where('order_status', 'delivered')
-                ->where('created_at', '>=', Carbon::now()->subMonths(12))
-                ->groupBy('year', 'month')
-                ->orderBy('year', 'asc')
-                ->orderBy('month', 'asc')
-                ->get();
+        $todayRevenue = DB::table('orders')
+            ->where('supplier_user_id', $supplierId)
+            ->whereDate('created_at', Carbon::today())
+            ->sum('total_price');
     
-            // Format monthly data as array of values
-            $monthlyData = array_fill(0, 12, 0);
-            foreach ($monthlyRevenue as $record) {
-                $index = (int)$record->month - 1;
-                $monthlyData[$index] = (float)$record->revenue;
-            }
+        $todayOrders = DB::table('orders')
+            ->where('supplier_user_id', $supplierId)
+            ->whereDate('created_at', Carbon::today())
+            ->count();
     
-            // Weekly Revenue (last 8 weeks)
-            $weeklyRevenue = DB::table('orders')
-                ->select(
-                    DB::raw('WEEK(created_at) as week'),
-                    DB::raw('YEAR(created_at) as year'),
-                    DB::raw('SUM(total_price) as revenue')
-                )
-                ->where('supplier_user_id', $supplierId)
-                // ->where('order_status', 'delivered')
-                ->where('created_at', '>=', Carbon::now()->subWeeks(8))
-                ->groupBy('year', 'week')
-                ->orderBy('year', 'asc')
-                ->orderBy('week', 'asc')
-                ->get();
+        // Previous values (for growth calculation)
+        $previousSales = DB::table('orders')
+            ->where('supplier_user_id', $supplierId)
+            ->whereDate('created_at', Carbon::yesterday())
+            ->count();
     
-            // Format weekly data as array of values
-            $weeklyData = array_fill(0, 8, 0);
-            foreach ($weeklyRevenue as $record) {
-                $index = (int)$record->week - (int)Carbon::now()->subWeeks(8)->week;
-                if ($index >= 0 && $index < 8) {
-                    $weeklyData[$index] = (float)$record->revenue;
-                }
-            }
+        $previousOrders = DB::table('orders')
+            ->where('supplier_user_id', $supplierId)
+            ->whereDate('created_at', Carbon::yesterday())
+            ->count();
     
-            // Today's Revenue
-            $todayRevenue = DB::table('orders')
-                ->where('supplier_user_id', $supplierId)
-                // ->where('order_status', 'delivered')
-                ->whereDate('created_at', Carbon::today())
-                ->sum('total_price');
+        $previousRevenue = DB::table('orders')
+            ->where('supplier_user_id', $supplierId)
+            ->whereDate('created_at', Carbon::yesterday())
+            ->sum('total_price');
     
-            // Today's Orders
-            $todayOrders = DB::table('orders')
-                ->where('supplier_user_id', $supplierId)
-                ->whereDate('created_at', Carbon::today())
-                ->count();
+        $previousTodayOrders = DB::table('orders')
+            ->where('supplier_user_id', $supplierId)
+            ->whereDate('created_at', Carbon::yesterday())
+            ->count();
     
-            return response()->json([
-                'total_sales' => $totalSales,
-                'total_orders' => $totalOrders,
-                'total_revenue' => $totalRevenue,
-                'revenue_breakdown' => [
-                    'monthly' => $monthlyData,
-                    'weekly' => $weeklyData,
-                    'today' => [$todayRevenue]
-                ],
-                'today_orders' => $todayOrders
-            ]);
+        // Calculate Growth Rates
+        $salesGrowth = $this->calculateGrowth($previousSales, $totalSales);
+        $ordersGrowth = $this->calculateGrowth($previousOrders, $totalOrders);
+        $revenueGrowth = $this->calculateGrowth($previousRevenue, $totalRevenue);
+        $todayOrdersGrowth = $this->calculateGrowth($previousTodayOrders, $todayOrders);
+    
+        // Monthly Revenue (last 12 months)
+        $monthlyRevenue = DB::table('orders')
+            ->select(
+                DB::raw('MONTH(created_at) as month'),
+                DB::raw('YEAR(created_at) as year'),
+                DB::raw('SUM(total_price) as revenue')
+            )
+            ->where('supplier_user_id', $supplierId)
+            ->where('created_at', '>=', Carbon::now()->subMonths(12))
+            ->groupBy('year', 'month')
+            ->orderBy('year', 'asc')
+            ->orderBy('month', 'asc')
+            ->get();
+    
+        $monthlyData = array_fill(0, 12, 0);
+        foreach ($monthlyRevenue as $record) {
+            $index = (int)$record->month - 1;
+            $monthlyData[$index] = (float)$record->revenue;
         }
     
+        // Weekly Revenue (last 8 weeks)
+        $weeklyRevenue = DB::table('orders')
+            ->select(
+                DB::raw('WEEK(created_at) as week'),
+                DB::raw('YEAR(created_at) as year'),
+                DB::raw('SUM(total_price) as revenue')
+            )
+            ->where('supplier_user_id', $supplierId)
+            ->where('created_at', '>=', Carbon::now()->subWeeks(8))
+            ->groupBy('year', 'week')
+            ->orderBy('year', 'asc')
+            ->orderBy('week', 'asc')
+            ->get();
+    
+        $weeklyData = array_fill(0, 8, 0);
+        foreach ($weeklyRevenue as $record) {
+            $index = (int)$record->week - (int)Carbon::now()->subWeeks(8)->week;
+            if ($index >= 0 && $index < 8) {
+                $weeklyData[$index] = (float)$record->revenue;
+            }
+        }
+    
+        return response()->json([
+            'total_sales' => [
+                'value' => $totalSales,
+                'growth_rate' => $salesGrowth
+            ],
+            'total_orders' => [
+                'value' => $totalOrders,
+                'growth_rate' => $ordersGrowth
+            ],
+            'total_revenue' => [
+                'value' => $totalRevenue,
+                'growth_rate' => $revenueGrowth
+            ],
+            'today_orders' => [
+                'value' => $todayOrders,
+                'growth_rate' => $todayOrdersGrowth
+            ],
+            'revenue_breakdown' => [
+                'monthly' => $monthlyData,
+                'weekly' => $weeklyData,
+                'today' => [$todayRevenue]
+            ],
+        ]);
+    }
+    
+    /**
+     * Helper function to calculate growth rate.
+     */
+    private function calculateGrowth($previous, $current)
+    {
+        if ($previous == 0) {
+            return $current > 0 ? 100 : 0; // 100% growth if previous was 0 and now has value
+        }
+        return round((($current - $previous) / $previous) * 100, 2);
+    }
+    
+    
+    private function calculateGrowth2($lastMonthValue, $currentValue)
+    {
+        if ($lastMonthValue == 0 && $currentValue == 0) {
+            return 0;
+        }
+
+        if ($lastMonthValue == 0) {
+            return 100;
+        }
+
+        return round((($currentValue - $lastMonthValue) / $lastMonthValue) * 100, 2);
+    }
 
     // public function getDashboardStats()
     // {
@@ -229,18 +280,6 @@ class AnalyticsController extends Controller
         ]);
     }
 
-    private function calculateGrowth($lastMonthValue, $currentValue)
-    {
-        if ($lastMonthValue == 0 && $currentValue == 0) {
-            return 0;
-        }
-
-        if ($lastMonthValue == 0) {
-            return 100;
-        }
-
-        return round((($currentValue - $lastMonthValue) / $lastMonthValue) * 100, 2);
-    }
 
 
     public function getRevenueGraphData(Request $request)

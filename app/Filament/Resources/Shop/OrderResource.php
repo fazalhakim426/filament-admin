@@ -11,8 +11,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Filament\Tables\Actions\Action;
 use Filament\Resources\Resource;
-use App\Enums\OrderStatus;
-use App\Enums\PaymentStatus;
+use App\Enums\OrderStatus; 
 use App\Models\Deposit;
 use App\Models\Order;
 use App\Models\Product;
@@ -62,7 +61,7 @@ class OrderResource extends Resource
                                 static::getItemsRepeater(),
                             ]),
                     ])
-                    ->columnSpan(['lg' => fn(?Order $record) => $record === null ? 3 : 2]),
+                    ->columnSpan(['lg' => fn(?Order $record) => $record === null ? 3 : 3 ]),
 
                 Forms\Components\Section::make()
                     ->schema([
@@ -77,7 +76,7 @@ class OrderResource extends Resource
                     ->columnSpan(['lg' => 1])
                     ->hidden(fn(?Order $record) => $record === null),
             ])
-            ->columns(3);
+            ->columns(2);
     }
 
     public static function table(Table $table): Table
@@ -315,6 +314,7 @@ class OrderResource extends Resource
                 ->dehydrated()
                 ->required()
                 ->maxLength(32)
+                ->columnSpan(2)
                 ->unique(Order::class, 'warehouse_number', ignoreRecord: true),
 
 
@@ -364,8 +364,7 @@ class OrderResource extends Resource
                     Forms\Components\Select::make('city_id')->relationship('city', 'name')->required(),
                     Forms\Components\Select::make('user_id')->relationship('user', 'name')->required(),
                 ])
-                ->reactive(), // Reacts when customer_user_id changes
-
+                ->reactive(),  
             Forms\Components\Select::make('recipient_id')
                 ->relationship('recipient', 'name')
                 ->searchable()
@@ -387,9 +386,10 @@ class OrderResource extends Resource
                 ])
                 ->reactive(), // Reacts when customer_user_id changes
 
-            Forms\Components\ToggleButtons::make('order_status')
+                Forms\Components\ToggleButtons::make('order_status')
                 ->inline()
                 ->options(OrderStatus::class)
+                ->columnSpan(2)
                 ->required(),
         ];
     }
