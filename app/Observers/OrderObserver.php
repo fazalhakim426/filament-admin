@@ -13,9 +13,9 @@ class OrderObserver
 {
     public function creating(Order $order): void
     {
-        $order->warehouse_number = $order->generateWarehouseNumber(); 
+        $order->warehouse_number = $order->generateWarehouseNumber();
     }
-    
+
     public function created(Order $order): void
     {
         OrderTracking::create([
@@ -24,7 +24,7 @@ class OrderObserver
             'note' => 'Order status updated to ' . $order->order_status,
         ]);
         $order->updateQuietly([
-            'total_price' => $order->items_cost + $order->shipping_cost
+            'total_price' => ($order->items_cost + $order->shipping_cost + $order->items_commission) - $order->items_discount
         ]);
         if ($order->isDirty('order_status')) {
             $originalStatus = $order->getOriginal('order_status');
@@ -45,6 +45,16 @@ class OrderObserver
                 'items_cost' => $order->items()->sum(DB::raw('price * quantity')),
             ]);
         }
+        if ($order->isDirty('items_commission')) {
+            $order->updateQuietly([
+                'items_commission' => $order->items()->sum(DB::raw('commission * quantity')),
+            ]);
+        }
+        if ($order->isDirty('items_discount')) {
+            $order->updateQuietly([
+                'items_discount' => $order->items()->sum(DB::raw('discount * quantity')),
+            ]);
+        }
     }
 
     /**
@@ -60,8 +70,8 @@ class OrderObserver
                 'note' => 'Order status updated to ' . $order->order_status,
             ]);
         }
-        if ($order->isDirty('shipping_cost') || $order->isDirty('items_cost')) {
-            $order->updateQuietly(['total_price' => $order->items_cost + $order->shipping_cost]);
+        if ($order->isDirty('shipping_cost') || $order->isDirty('items_cost') || $order->isDirty('items_commission') || $order->isDirty('items_discount')) {
+            $order->updateQuietly(['total_price' => ($order->shipping_cost + $order->items_cost  + $order->items_commission) - $order->items_discount]);
         }
     }
 

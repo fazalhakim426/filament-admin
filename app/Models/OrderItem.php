@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\DB;
 
 class OrderItem extends Model
 {
- 
+
     public $timestamps  = false;
 
     protected $fillable = [
@@ -18,6 +18,7 @@ class OrderItem extends Model
         'quantity',
         'price',
         'discount',
+        'commission',
         'total'
     ];
     protected static function boot()
@@ -28,7 +29,7 @@ class OrderItem extends Model
             $order = $item->order;
             $order->update([
                 'items_cost' => $order->items()->sum(DB::raw('price * quantity')),
-            ]); 
+            ]);
             $order->fresh();
             if ($order->need_to_pay == 0) {
                 $order->update([
@@ -58,6 +59,8 @@ class OrderItem extends Model
             }
             $order->update([
                 'items_cost' => $order->items()->sum(DB::raw('price * quantity')),
+                'items_commission' => $order->items()->sum(DB::raw('quantity * commission')),
+                'items_discount' => $order->items()->sum(DB::raw('quantity * discount')),
             ]);
             $order->fresh();
             if ($order->need_to_pay == 0) {

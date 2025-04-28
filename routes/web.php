@@ -15,6 +15,12 @@ Route::get('/order-test', function () {
     dump(['OrderDeposits' => Deposit::orderDeposits()->count()]);
     dd(Deposit::count());
 });
+//auth middleware
+
+Route::middleware(['auth:web'])->group(function () {
+    Route::get('/orders/{order}/airway-bill', [\App\Http\Controllers\Api\Supplier\OrderController::class, 'streamAirwayBill'])->name('orders.stream-airway-bill');
+});
+
 
 // Custom Artisan commands for quick execution
 Route::get('/artisan/optimize-clear', function () {

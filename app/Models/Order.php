@@ -22,6 +22,8 @@ class Order extends Model
         'sender_id',
         'total_price',
         'items_cost',
+        'items_discount',
+        'items_commission',
         'shipping_cost',
         'order_status',
         'created_at',
@@ -166,10 +168,13 @@ class Order extends Model
 
         return $this->order_status;
     }
-    function reCalculate()
+    public function reCalculate()
     {
+        $this->shipping_cost = $this->shipping_cost ?? 0;
         $this->items_cost = $this->items()->sum(DB::raw('price * quantity'));
-        $this->total_price = $this->shipping_cost + $this->items_cost;
+        $this->items_commission = $this->items()->sum(DB::raw('quantity * commission'));
+        $this->items_discount = $this->items()->sum(DB::raw('quantity * discount'));
+        $this->total_price = ($this->shipping_cost + $this->items_cost + $this->items_commission) - $this->items_discount;
         $this->save();
     }
 }

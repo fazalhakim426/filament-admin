@@ -16,26 +16,18 @@ class HomeBannerController extends Controller
     use CustomRespone;
     public function index()
     {
-        $params = request()->only(['per_page', 'is_active']);
+        $params = request()->only(['is_active']);
         $query = HomeBanner::with('product');
         if (isset($params['is_active'])) {
             $isActive = $params['is_active'];
             $query->where('is_active', $isActive == "1" || $isActive == "true" ? 1 : 0);
-        }
-        $perPage = $params['per_page'] ?? 10;
-        return response()->json([
-            'success' => true,
-            'message' => 'HomeBanner lists',
-            'data' => HomeBannerResource::collection($query->paginate($perPage))->response()->getData(true)
-        ]);
+        } 
+        return $this->json(200,true, 'HomeBanner lists',HomeBannerResource::collection($query->latest()->get()) );
     }
     public function show($id)
     {
         $homeBanner = HomeBanner::with('product')->findOrFail($id);
-        return response()->json([
-            'success' => true,
-            'message' => 'HomeBanner detail list',
-            'data' => new HomeBannerResource($homeBanner)
-        ]);
+        return $this->json(200,true, 'HomeBanner detail list',new HomeBannerResource($homeBanner)
+        );
     }
 }

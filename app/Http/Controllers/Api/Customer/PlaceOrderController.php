@@ -42,110 +42,32 @@ class PlaceOrderController extends Controller
             'deposits'
         ]));
     }
-    // public function store(Request $request)
-    // {
-    //     $request->validate([
-    //         'items' => 'required|array',
-    //         'items.*.product_variant_id' => 'required|exists:product_variants,id',
-    //         'items.*.quantity' => 'required|integer|min:1',
-    //         'sender_id' => 'nullable|exists:addresses,id',
-    //         'recipient_id' => 'nullable|exists:addresses,id',
-    //         'sender' => 'nullable|array',
-    //         'recipient' => 'nullable|array',
-    //     ], [], [
-    //         'sender_id' => 'sender address ID',
-    //         'recipient_id' => 'recipient address ID',
-    //         'sender' => 'sender address',
-    //         'recipient' => 'recipient address',
-    //     ]);
 
-    //     if (!$request->filled('sender_id') && !$request->filled('sender')) {
-    //         throw ValidationException::withMessages([
-    //             'sender_id' => ['Either sender_id or sender address details must be provided.'],
-    //         ]);
-    //     }
-
-    //     if (!$request->filled('recipient_id') && !$request->filled('recipient')) {
-    //         throw ValidationException::withMessages([
-    //             'recipient_id' => ['Either recipient_id or recipient address details must be provided.'],
-    //         ]);
-    //     }
-
-    //     DB::beginTransaction();
-
-    //     try {
-    //         $senderId = $request->sender_id;
-    //         $recipientId = $request->recipient_id;
-
-    //         if (!$senderId && $request->filled('sender')) {
-    //             $sender = Address::create(array_merge($request->sender, ['user_id' => auth()->id()]));
-    //             $senderId = $sender->id;
-    //         }
-
-    //         if (!$recipientId && $request->filled('recipient')){
-    //             $recipient = Address::create(array_merge($request->recipient, ['user_id' => auth()->id()]));
-    //             $recipientId = $recipient->id;
-    //         }
-
-    //         $order = Order::create([
-    //             'warehouse_number' => $request->warehouse_number,
-    //             'total_price' => '-1',
-    //             'items_cost' => '-1',
-    //             'shipping_cost' => '-1',
-    //             'customer_user_id' => auth()->id(),
-    //             'sender_id' => $senderId,
-    //             'recipient_id' => $recipientId,
-    //             'order_status' => 'new',
-    //             'payment_status' => 'unpaid'
-    //         ]);
-
-    //         foreach ($request->items as $item) {
-    //             $variant = ProductVariant::find($item['product_variant_id']);
-    //             // if ($variant->stock_quantity < $item['quantity']) {
-    //             //     return $this->rollbackWithResponse('Product variant out of stock', 422);
-    //             // }
-
-    //             $order->items()->create([
-    //                 'product_variant_id' => $variant->id,
-    //                 'product_id' => $variant->product_id,
-    //                 'quantity' => $item['quantity'],
-    //                 'price' => $variant->unit_selling_price,
-    //                 'supplier_user_id' => $variant->product->supplier_user_id,
-    //                 'order_status' => 'pending'
-    //             ]);
-    //         }
-
-    //         DB::commit();
-    //         $order->refresh();
-
-    //         return $this->json(200, true, 'Order created successfully', new OrderResource($order->load(['items.productVariant.product','items.productVariant.variantOptions', 'sender', 'recipient','deposits'])));
-    //     } catch (\Exception $e) {
-    //         DB::rollBack();
-    //         return $this->json(500, false, 'Failed to create order: ' . $e->getMessage(), null);
-    //     }
-    // }
     public function store(Request $request)
-    { 
-
+    {
         $request->validate([
             'items' => 'required|array',
             'items.*.product_variant_id' => 'required|exists:product_variants,id',
             'items.*.quantity' => 'required|integer|min:1',
+            'items.*.commission' => 'nullable|integer|min:1',
+            'items.*.apply_discount' => 'nullable|boolean',
             'sender_id' => 'nullable|exists:addresses,id',
             'recipient_id' => 'nullable|exists:addresses,id',
             'sender' => 'nullable|array',
             'recipient' => 'nullable|array',
+            'shipping_cost' => 'nullable|numeric|min:1'
         ], [], [
             'sender_id' => 'sender address ID',
             'recipient_id' => 'recipient address ID',
             'sender' => 'sender address',
             'recipient' => 'recipient address',
         ]);
-        if (!$request->filled('sender_id') && !$request->filled('sender')) {
-            throw ValidationException::withMessages([
-                'sender_id' => ['Either sender_id or sender address details must be provided.'],
-            ]);
-        }
+        // if (!$request->filled('sender_id') && !$request->filled('sender')) {
+
+        //     // throw ValidationException::withMessages([
+        //     //     'sender_id' => ['Either sender_id or sender address details must be provided.'],
+        //     // ]);
+        // }
 
         if (!$request->filled('recipient_id') && !$request->filled('recipient')) {
             throw ValidationException::withMessages([
@@ -158,9 +80,27 @@ class PlaceOrderController extends Controller
             $senderId = $request->sender_id;
             $recipientId = $request->recipient_id;
 
-            if (!$senderId && $request->filled('sender')) {
-                $sender = Address::create(array_merge($request->sender, ['user_id' => auth()->id()]));
-                $senderId = $sender->id;
+            if (!$senderId) {
+                if ($request->filled('sender')) {
+                    $sender = Address::create(array_merge($request->sender, ['user_id' => auth()->id()]));
+                    $senderId = $sender->id;
+                } else {
+                    $authUser = Auth::user();
+                    $sender = Address::create([
+                        'address' =>  $authUser->address,
+                        'phone' =>    $authUser->phone,
+                        'name' => $authUser->name,
+                        'email' => $authUser->email,
+                        'whatsapp' => $authUser->whatsapp,
+                        'street' => $authUser->street,
+                        'zip' => $authUser->zip,
+                        'country_id' => $authUser->country_id,
+                        'city_id' => $authUser->city_id,
+                        'state_id' => $authUser->state_id,
+                        'user_id' => $authUser->id
+                    ]);
+                    $senderId = $sender->id;
+                }
             }
 
             if (!$recipientId && $request->filled('recipient')) {
@@ -175,28 +115,38 @@ class PlaceOrderController extends Controller
             $orders = [];
             foreach ($itemsGroupedBySupplier as $supplierId => $items) {
                 $order = Order::create([
-                    'warehouse_number' => $request->warehouse_number, 
+                    'warehouse_number' => $request->warehouse_number,
                     'customer_user_id' => auth()->id(),
                     'supplier_user_id' => $supplierId,
                     'sender_id' => $senderId,
-                    'shipping_cost' => '10',
                     'recipient_id' => $recipientId,
                     'order_status' => 'new',
-                    'payment_status' => 'unpaid'
+                    'payment_status' => 'unpaid',
+                    'shipping_cost' => $request->shipping_cost ?? 10,
                 ]);
 
                 foreach ($items as $item) {
                     $variant = ProductVariant::find($item['product_variant_id']);
+
+                    $discount = 0;
+                    if (isset($item['apply_discount']) && $item['apply_discount'] === true) {
+                        $discount = $variant->discount ?? 0;
+                    }
+
                     $order->items()->create([
                         'product_variant_id' => $variant->id,
                         'product_id' => $variant->product_id,
                         'quantity' => $item['quantity'],
                         'price' => $variant->unit_selling_price,
+                        'discount' => $discount,
+                        'commission' => $item['commission'] ?? 0,
                         'supplier_user_id' => $variant->product->supplier_user_id,
                         'order_status' => 'pending'
+
                     ]);
                 }
                 $order->refresh();
+                $order->reCalculate();
 
                 $orders[] = $order;
             }

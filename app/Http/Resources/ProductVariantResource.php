@@ -20,11 +20,13 @@ class ProductVariantResource extends JsonResource
             'product_id' => $this->product_id,
             'sku' => $this->sku,
             'price' => $this->unit_selling_price,
+            'discount' => $this->discount,
+            'discount_description' => $this->discount_description,
             'stock_quantity' => $this->stock_quantity, 
             'description' => $this->description,
             'images' => ImageResource::collection($this->images),
             'variant_options' => VariantOptionResource::collection($this->variantOptions),
-            'variants' => VariantKeyValueOptionResource::collection($this->variantOptions),
+            // 'variants' => VariantKeyValueOptionResource::collection($this->variantOptions),
             'inventory_movements' => InventoryMovementResource::collection($this->whenLoaded('inventoryMovements')),
              
         ];

@@ -36,7 +36,7 @@
         Airway Bill for Order #{{ $warehouse_number }}
     </div>
     <div class="content">
-        <p><strong>Order ID:</strong> {{ $order_id }}</p>
+        <p><strong>Order ID:</strong>  {{ $order_id }} </p>
         <p><strong>Total Price:</strong> {{ $total_price }}</p>
     </div>
     <div class="footer">

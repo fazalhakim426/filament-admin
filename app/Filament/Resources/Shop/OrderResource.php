@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Filament\Tables\Actions\Action;
 use Filament\Resources\Resource;
-use App\Enums\OrderStatus; 
+use App\Enums\OrderStatus;
 use App\Models\Deposit;
 use App\Models\Order;
 use App\Models\Product;
@@ -61,7 +61,7 @@ class OrderResource extends Resource
                                 static::getItemsRepeater(),
                             ]),
                     ])
-                    ->columnSpan(['lg' => fn(?Order $record) => $record === null ? 3 : 3 ]),
+                    ->columnSpan(['lg' => fn(?Order $record) => $record === null ? 3 : 3]),
 
                 Forms\Components\Section::make()
                     ->schema([
@@ -172,6 +172,12 @@ class OrderResource extends Resource
                     }),
             ])
             ->actions([
+                Action::make('view_airway_bill')
+                    ->label('AirwayBill')
+                    ->url(fn(Order $record) => route('orders.stream-airway-bill', $record)) // adjust route name if needed
+                    ->openUrlInNewTab()
+                    ->icon('heroicon-m-document-text'),
+
                 Action::make('Pay')
                     ->modalHeading('Make a Payment')
                     ->modalButton('Pay Now')
@@ -364,7 +370,7 @@ class OrderResource extends Resource
                     Forms\Components\Select::make('city_id')->relationship('city', 'name')->required(),
                     Forms\Components\Select::make('user_id')->relationship('user', 'name')->required(),
                 ])
-                ->reactive(),  
+                ->reactive(),
             Forms\Components\Select::make('recipient_id')
                 ->relationship('recipient', 'name')
                 ->searchable()
@@ -386,7 +392,7 @@ class OrderResource extends Resource
                 ])
                 ->reactive(), // Reacts when customer_user_id changes
 
-                Forms\Components\ToggleButtons::make('order_status')
+            Forms\Components\ToggleButtons::make('order_status')
                 ->inline()
                 ->options(OrderStatus::class)
                 ->columnSpan(2)
@@ -402,11 +408,11 @@ class OrderResource extends Resource
             ->schema([
                 Forms\Components\Select::make('product_id')
                     ->label('Product')
-                    ->options(function (Forms\Get $get){
+                    ->options(function (Forms\Get $get) {
                         $supplierUserId = $get('supplier_user_id');
-                        if (!$supplierUserId){
-                            return Product::query()->pluck('name', 'id'); 
-                        } 
+                        if (!$supplierUserId) {
+                            return Product::query()->pluck('name', 'id');
+                        }
                         return Product::where('supplier_user_id', $supplierUserId)
                             ->pluck('name', 'id');
                     })

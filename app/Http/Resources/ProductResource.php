@@ -2,18 +2,13 @@
 
 namespace App\Http\Resources;
 
-use App\Models\Review;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class ProductResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     */
     public function toArray(Request $request): array
     {
-        // Load variants and options
         $variants = $this->whenLoaded('productVariants');
 
         $allOptions = $variants
@@ -23,85 +18,108 @@ class ProductResource extends JsonResource
                 'attribute_value' => $opt->attribute_value,
             ]))
             : collect();
+ 
+        $availableAttributes = $allOptions
+            ->groupBy('attribute_name')
+            ->map(fn($group) => $group->pluck('attribute_value')->unique()->values());
+ 
+        $variantMapping = $variants ? $variants->map(function ($variant) {
+            $attributes = $variant->variantOptions->mapWithKeys(function ($opt) {
+                return [strtolower($opt->attribute_name) => $opt->attribute_value];
+            });
 
-        // Get all sizes
-        $sizes = $allOptions
-            ->whereIn('attribute_name', ['size', 'Size'])
-            ->pluck('attribute_value')
-            ->unique()
-            ->values();
+            return [
+                'variant_id' => $variant->id,
+                'attributes' => $attributes,
+                'stock_quantity' => $variant->stock_quantity,
+                'in_stock' => $variant->stock_quantity > 0,
+                'price' => $variant->unit_selling_price,
+            ];
+        })->values() : collect();
 
-        // Get all colors
-        $colors = $allOptions
-            ->whereIn('attribute_name', ['color', 'Color'])
-            ->pluck('attribute_value')
-            ->unique()
-            ->values();
+        $averageRating = $this->reviews()->avg('rating_stars');
+        $totalSold = $this->orderItems()
+            ->whereHas('order', fn($query) => $query->where('order_status', '!=', 'canceled'))
+            ->sum('quantity'); 
+        $attributeStockStatus = [];
 
-        // Build size => [colors] map
-        $sizeColorCombinations = [];
+        foreach ($variantMapping as $variant) {
+            foreach ($variant['attributes'] as $attributeName => $attributeValue) {
+                if (!isset($attributeStockStatus[$attributeName])) {
+                    $attributeStockStatus[$attributeName] = [];
+                }
 
-        foreach ($variants as $variant) {
-            $size = $variant->variantOptions->whereIn('attribute_name', ['size', 'Size'])->first()?->attribute_value;
-            $color = $variant->variantOptions->whereIn('attribute_name', ['color', 'Color'])->first()?->attribute_value;
+                if (!isset($attributeStockStatus[$attributeName][$attributeValue])) {
+                    $attributeStockStatus[$attributeName][$attributeValue] = [
+                        'in_stock' => false,
+                        'total_stock' => 0,
+                    ];
+                }
+ 
+                $attributeStockStatus[$attributeName][$attributeValue]['total_stock'] += $variant['stock_quantity'];
 
-            if ($size && $color) {
-                $sizeColorCombinations[$size][] = $color;
+                if ($variant['stock_quantity'] > 0) {
+                    $attributeStockStatus[$attributeName][$attributeValue]['in_stock'] = true;
+                }
             }
         }
 
-        // Make sure colors are unique per size
-        foreach ($sizeColorCombinations as $size => $colorList) {
-            $sizeColorCombinations[$size] = array_values(array_unique($colorList));
+       
+
+        $attributeStockMap = [];
+
+        foreach ($variantMapping as $variant) {
+            $attributes = $variant['attributes']->toArray(); // <- FIXED
+        
+            $attributeKeys = array_keys($attributes);
+        
+            for ($i = 0; $i < count($attributeKeys) - 1; $i++) {
+                $parentKey = $attributeKeys[$i];
+                $parentValue = $attributes[$parentKey];
+        
+                $childKey = $attributeKeys[$i + 1];
+                $childValue = $attributes[$childKey];
+        
+                if (!isset($attributeStockMap[$parentKey])) {
+                    $attributeStockMap[$parentKey] = [];
+                }
+        
+                if (!isset($attributeStockMap[$parentKey][$parentValue])) {
+                    $attributeStockMap[$parentKey][$parentValue] = [];
+                }
+        
+                if (!isset($attributeStockMap[$parentKey][$parentValue][$childKey])) {
+                    $attributeStockMap[$parentKey][$parentValue][$childKey] = [];
+                }
+        
+                $attributeStockMap[$parentKey][$parentValue][$childKey][$childValue] = [
+                    'in_stock' => $variant['in_stock'],
+                    'stock_quantity' => $variant['stock_quantity'],
+                ];
+            }
         }
-
-
-        $averageRating = $this->reviews()->avg('rating_stars');
-
-        $totalSold = $this->orderItems()
-        ->whereHas('order', function($query) {
-            $query->where('order_status', '!=', 'canceled');
-        })
-        ->sum('quantity');
+        
 
         return [
             'id' => $this->id,
             'name' => $this->name,
             'description' => $this->description,
             'is_active' => (bool) $this->is_active,
-            'created_date' => $this->created_at->format('Y-m-d H:i:s'),
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
             'manzil_choice' => (bool) $this->manzil_choice,
             'sponsor' => (bool) $this->sponsor,
-            'available_sizes' => $sizes,
-            'available_colors' => $colors,
-            'total_sold' => (int) $totalSold,
-            'size_color_combinations' => $sizeColorCombinations,
-            'variant_mapping' => $variants->map(function ($variant) {
-                    $size = $variant->variantOptions->whereIn('attribute_name', ['size', 'Size'])->first()?->attribute_value;
-                    $color = $variant->variantOptions->whereIn('attribute_name', ['color', 'Color'])->first()?->attribute_value;
+            'available_attributes' => $availableAttributes,
+            'variant_mapping' => $variantMapping,
+            'attribute_stock_map' => $attributeStockMap,
 
-                    return [
-                        'variant_id' => $variant->id,
-                        'size' => $size,
-                        'color' => $color,
-                        'stock_quantity' => $variant->stock_quantity,
-                        'in_stock' => $variant->stock_quantity > 0,
-                        'price' => $variant->unit_selling_price, // optional: include price per variant
-                    ];
-                })->filter(fn($v) => $v['size'] && $v['color'])->values(),
-
-
-            'product_variants' => ProductVariantResource::collection($variants), 
-            // 'specifications' => ProductSpecificationResource::collection($this->whenLoaded('specifications')),
+            'product_variants' => ProductVariantResource::collection($variants),
             'category' => new CategoryResource($this->category),
             'sub_category' => new SubCategoryResource($this->subCategory),
             'reseller' => new ResellerResource($this->whenLoaded('reseller')),
-            'supplier' => new UserResource($this->whenLoaded('supplierUser')), 
+            'supplier' => new UserResource($this->whenLoaded('supplierUser')),
             'reviews' => ReviewResource::collection($this->whenLoaded('reviews')),
             'average_rating' => round($averageRating),
-            'created_at' => $this->created_at->diffForHumans(), // Human-readable format
+            'total_sold' => (int) $totalSold,
+            'created_at' => $this->created_at->diffForHumans(),
             'updated_at' => $this->updated_at->diffForHumans(),
         ];
     }

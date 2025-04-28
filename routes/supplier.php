@@ -4,6 +4,7 @@ use App\Http\Controllers\ReviewController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
+ 
 Route::middleware(['auth:sanctum'])->prefix('supplier')->group(function () {
     Route::apiResource('products', \App\Http\Controllers\Api\Supplier\ProductController::class);
     Route::patch('products/{product}/deactivate', [\App\Http\Controllers\Api\Supplier\ProductController::class, 'deactivate']);
@@ -34,7 +35,7 @@ Route::middleware(['auth:sanctum'])->prefix('supplier')->group(function () {
     Route::get('/change-order-status/{order}/returned', [\App\Http\Controllers\Api\Supplier\OrderStatusController::class, 'returned']);
     Route::get('/change-order-status/{order}/canceled', [\App\Http\Controllers\Api\Supplier\OrderStatusController::class, 'canceled']);
     Route::get('/any-order-status/{order}/{status}', [\App\Http\Controllers\Api\Supplier\OrderStatusController::class, 'anyStatus']);
-    Route::patch('/orders/{order}/download-airway-bill', [\App\Http\Controllers\Api\Supplier\OrderController::class, 'downloadAirwayBill']);
+    Route::get('/orders/{order}/download-airway-bill', [\App\Http\Controllers\Api\Supplier\OrderController::class, 'downloadAirwayBill']);
 
 
     Route::get('/reviews', [\App\Http\Controllers\Api\Supplier\ReviewController::class, 'index']);

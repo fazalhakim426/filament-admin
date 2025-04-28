@@ -84,8 +84,7 @@ class ProductController extends Controller
     public function show(Product $product)
     {
         return $this->json(200, true, 'Show product', new ProductResource($product->load(
-            'productVariants.variantOptions',
-            'reviews'
+            'productVariants.variantOptions'
         )));
     }
     public function store(Request $request)

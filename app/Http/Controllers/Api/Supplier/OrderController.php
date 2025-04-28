@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api\Supplier;
 
-use App\Http\Controllers\Controller; 
+use App\Http\Controllers\Controller;
 use App\Http\Resources\OrderResource; 
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Barryvdh\DomPDF\Facade\Pdf;
+
 class OrderController extends Controller
 {
     use CustomRespone;
@@ -26,7 +27,7 @@ class OrderController extends Controller
             'deposits',
             'trackings'
         ])
-        ->paginate(request('per_page', 15));
+            ->paginate(request('per_page', 15));
 
         return $this->json(200, true, 'Order retrieved successfully.', [
             'data' => OrderResource::collection($orders),
@@ -44,7 +45,7 @@ class OrderController extends Controller
                 'prev' => $orders->previousPageUrl(),
                 'next' => $orders->nextPageUrl(),
             ]
-        ]); 
+        ]);
     }
 
     // Show a specific order
@@ -141,41 +142,7 @@ class OrderController extends Controller
 
     // Generate and download airway bill
 
-    public function downloadAirwayBill(Order $order)
-    {
-        // if ($order->status !== 'shipped') {
-        //     return $this->json([
-        //         'message' => 'Airway bill can only be generated for shipped orders.',
-        //     ], 400);
-        // } 
-        // Example order data (replace with actual $order object values)
-        $orderData = [
-            'warehouse_number' => $order->warehouse_number,
-            'total_price' => $order->total_price,
-            'shipping_cost' => $order->shipping_cost,
-            'items_cost' => $order->items_cost,
-            'order_id' => $order->id,
-        ];
 
-        // Generate PDF content using a Blade view
-        $pdf = PDF::loadView('pdf.airway_bill', $orderData);
-
-        // Define the PDF file name
-        $fileName = "Order_{$order->id}_Airway_Bill.pdf";
-
-        // Return the PDF as a download
-        // return $pdf->download($fileName);
-
-        $orderData = [
-            'warehouse_number' => $order->warehouse_number,
-            'total_price' => $order->total_price,
-            'order_id' => $order->id,
-        ];
-
-        $pdf = Pdf::loadView('pdf.airway_bill', $orderData);
-
-        return $pdf->download("Order_{$order->id}_Airway_Bill.pdf");
-    }
 
     public function airwayBillText(Order $order)
     {
@@ -234,5 +201,27 @@ class OrderController extends Controller
         $order->update(['order_status' => 'delivered']);
 
         return $this->json(200, true, 'Order deivered successfully.');
+    }
+    public function streamAirwayBill(Order $order)
+    {
+        $pdf =  Pdf::loadView('pdf.airway_bill', $this->airwaybillData($order));
+        return $pdf->stream("Order_{$order->id}_Airway_Bill.pdf");
+    }
+    public function downloadAirwayBill(Order $order)
+    {
+        $pdf =  Pdf::loadView('pdf.airway_bill', $this->airwaybillData($order));
+        return $pdf->download("Order_{$order->id}_Airway_Bill.pdf");
+    }
+    public function airwaybillData(Order $order)
+    {
+        return [
+            'warehouse_number' => $order->warehouse_number,
+            'total_price' => $order->total_price,
+            'shipping_cost' => $order->shipping_cost,
+            'items_cost' => $order->items_cost,
+            'order_id' => $order->id,  
+            'total_price' => $order->total_price,
+            'order_id' => $order->id,
+        ];
     }
 }

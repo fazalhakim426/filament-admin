@@ -17,9 +17,11 @@ class HomeBannerResource extends JsonResource
         return  [
             'id'    => $this->id,
             'title' => $this->title,     
+            'description' => $this->description,
             'button_text' => $this->button_text, 
             'button_link' => $this->button_link, 
             'is_active' => $this->is_active, 
+
             'image_url' => asset('storage/' . $this->image_url),
             'product'=>[
                 'id' => $this->product->id,

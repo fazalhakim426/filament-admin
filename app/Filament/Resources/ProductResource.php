@@ -103,10 +103,18 @@ class ProductResource extends Resource
                             ->required()
                             ->maxLength(255),
 
-                        TextInput::make('unit_selling_price')
+                            TextInput::make('unit_selling_price')
                             ->label('Unit Selling Price')
                             ->numeric()
                             ->required(),
+                            TextInput::make('discount')
+                                ->label('Discount')
+                                ->numeric()
+                                ->required(),
+                                TextInput::make('discount_description')
+                                    ->label('Discount description')
+                                    ->required()
+                                    ->maxLength(255),
 
                         // Nested repeater for variant options
                         Repeater::make('variantOptions')
@@ -201,7 +209,7 @@ class ProductResource extends Resource
                                     ->map(fn($opt) => "{$opt->attribute_name}: {$opt->attribute_value}")
                                     ->join(', ');
 
-                                return "SKU - {$variant->sku} ({$options}) - RS {$variant->unit_selling_price}";
+                                return "SKU - {$variant->sku} ({$options}) - RS {$variant->unit_selling_price} . Discount {$variant->discount}"; ;
                             })
                             ->join('<br><br>');
                     })

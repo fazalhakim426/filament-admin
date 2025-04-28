@@ -13,6 +13,7 @@ use Pest\ArchPresets\Custom;
 class ReviewController extends Controller
 {
     use CustomRespone;
+ 
     public function store(Request $request)
     {
         $request->validate([
@@ -20,17 +21,7 @@ class ReviewController extends Controller
             'product_id' => 'required|exists:products,id', 
             'rating_stars' => 'required|numeric|min:0|max:5',
             'review_text' => 'nullable|string|max:1000',
-        ]);
-
-        // Ensure the authenticated user is submitting the review for their order
-        $user = Auth::user();
-        $order = Order::find($request->order_id);
-
-        // if ($order && $order->user_id != $user->id) {
-        //     return response()->json([
-        //         'message' => 'You can only review your own orders.',
-        //     ], 403);
-        // }
+        ]); 
 
         $review = Review::create([
             'order_id' => $request->order_id,
