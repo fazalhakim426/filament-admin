@@ -15,9 +15,9 @@ class SupplierDetailResource extends JsonResource
      * @return array<string, mixed>
      */
     public function toArray(Request $request): array
-    { 
+    {
         $cacheKey = 'average_rating_supplier_' . $this->user_id;
-        
+
         $averageRating = Cache::remember($cacheKey, now()->addMinutes(30), function () {
             return Review::whereHas('product', function ($query) {
                 $query->where('supplier_user_id', $this->user_id);
@@ -45,13 +45,17 @@ class SupplierDetailResource extends JsonResource
             'cnic' => $this->cnic,
             'contact_person' => $this->contact_person,
             'bank_name' => $this->bank_name,
-            'bank_branch' => $this->bank_branch, 
+            'bank_branch' => $this->bank_branch,
             'bank_account_number' => $this->bank_account_number,
             'bank_iban' => $this->bank_iban,
-            'term_of_services' => $this->term_of_services,             
-            'city'=> $this->city,
-            'state'=> $this->state,
-            'country'=>new CountryResource($this->country),
+            'term_of_services' => $this->term_of_services,
+            'city' => $this->city,
+            'state' => $this->state,
+            'country' => new CountryResource($this->country),
+            'created_at' => $this->created_at->format('Y-m-d H:i:s'),
+            'updated_at' => $this->updated_at->format('Y-m-d H:i:s'),
+            'created_at_for_humans' => $this->created_at->diffForHumans(),
+            'updated_at_for_humans' => $this->updated_at->diffForHumans(),
         ];
     }
 }

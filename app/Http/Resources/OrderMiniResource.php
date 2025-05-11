@@ -24,6 +24,11 @@ class OrderMiniResource extends JsonResource
                 'items_cost' => (int)$this->items_cost,
                 'order_status' => $this->order_status,
                 'payment_status' => $this->payment_status,
+                
+            'created_at' => $this->created_at->format('Y-m-d H:i:s'),
+            'updated_at' => $this->updated_at->format('Y-m-d H:i:s'),
+            'created_at_for_humans' => $this->created_at->diffForHumans(),
+            'updated_at_for_humans' => $this->updated_at->diffForHumans(),
             ];
     }
 }

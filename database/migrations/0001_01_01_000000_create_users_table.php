@@ -78,6 +78,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('email');
             $table->string('phone')->nullable();
+            $table->string('near_by')->nullable();
             $table->string('whatsapp')->nullable();
             $table->string('street')->nullable();
             $table->string('zip')->nullable();

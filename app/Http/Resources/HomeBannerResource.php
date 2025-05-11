@@ -27,6 +27,11 @@ class HomeBannerResource extends JsonResource
                 'id' => $this->product->id,
                 'name' => $this->product->name,
             ]
+            
+            'created_at' => $this->created_at->format('Y-m-d H:i:s'),
+            'updated_at' => $this->updated_at->format('Y-m-d H:i:s'),
+            'created_at_for_humans' => $this->created_at->diffForHumans(),
+            'updated_at_for_humans' => $this->updated_at->diffForHumans(),
         ];
     }
 }

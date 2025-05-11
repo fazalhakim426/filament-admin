@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api\Supplier;
 
 use App\Http\Controllers\Controller;
-use App\Http\Resources\OrderResource; 
+use App\Http\Resources\OrderResource;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Trait\CustomRespone;
@@ -214,14 +214,71 @@ class OrderController extends Controller
     }
     public function airwaybillData(Order $order)
     {
+        $barcodeUrl = 'https://barcode.tec-it.com/barcode.ashx?data=20044512489503&code=Code128&translate-esc=true';
+        $barcodeContent = file_get_contents($barcodeUrl);
+        // Convert it to base64
+        $barcodeBase64 = 'data:image/png;base64,' . base64_encode($barcodeContent);
+
+        $postExBarcodeUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=sample';
+        $postExContent = file_get_contents($postExBarcodeUrl);
+        $postBarcodeBase64 = 'data:image/png;base64,' . base64_encode($postExContent);
+        $recipient = $order->recipient;
+        $sender = $order->sender; 
+
+        $orderItems=[];
+        foreach($order->items as $item){
+            $orderItems[]=[
+                'product_name' => $item->productVariant->product->name,
+                'sku' => $item->productVariant->sku,
+                'variant_name' => $item->productVariant->variantOptions->map(function ($option) {
+                    return $option->name;
+                })->implode(', '),
+                'quantity' => $item->quantity,
+                'price' => $item->price,
+            ];
+        }
+        
+        $order->items->map(function ($item) {
+            return [
+                'product_name' => $item->productVariant->product->name,
+                'variant_name' => $item->productVariant->variantOptions->map(function ($option) {
+                    return $option->name;
+                })->implode(', '),
+                'quantity' => $item->quantity,
+                'price' => $item->price,
+            ];
+        });
         return [
+            'barcode' => $barcodeBase64,
+            'post_ex_barcode' => $postBarcodeBase64,
             'warehouse_number' => $order->warehouse_number,
             'total_price' => $order->total_price,
             'shipping_cost' => $order->shipping_cost,
             'items_cost' => $order->items_cost,
-            'order_id' => $order->id,  
-            'total_price' => $order->total_price,
             'order_id' => $order->id,
+            'total_price' => $order->total_price, 
+            'destination' => [
+                'name' => $recipient->name,
+                'address' => $recipient->address,
+                'phone' => $recipient->phone,
+                'zip' => $recipient->zip,
+                'street' => $recipient->street,
+                'country' => $recipient->country->name,
+                'state' => $recipient->state->name,
+                'city' => $recipient->city->name,
+            ],
+            'sender' => [
+                'name' => $sender->name,
+                'street' => $recipient->street,
+                'address' => $sender->address,
+                'phone' => $recipient->phone,
+                'zip' => $sender->zip,
+                'country' => $sender->country->name,
+                'state' => $sender->state->name,
+                'city' => $sender->city->name,
+            ],
+            'items_count' => $order->items->count(),
+            'items' => $orderItems,
         ];
     }
 }

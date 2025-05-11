@@ -26,11 +26,16 @@ class OrderResource extends JsonResource
                     'items_commission' => $this->items_commission,
                     'items_discount' => $this->items_discount,
                 ],
+                
+                'order_status' => $this->order_status,
                 'payment_status' => $this->payment_status,
                 'need_to_pay' => $this->need_to_pay,
                 'order_date' => $this->created_at->format('Y-m-d H:i:s'),
-                'created_at' => $this->created_at->diffForHumans(),
-                'updated_at' => $this->updated_at->diffForHumans(),
+                
+                'created_at' => $this->created_at->format('Y-m-d H:i:s'),
+                'updated_at' => $this->updated_at->format('Y-m-d H:i:s'),
+                'created_at_for_humans' => $this->created_at->diffForHumans(),
+                'updated_at_for_humans' => $this->updated_at->diffForHumans(),
                 'trackings' => OrderTrackingResource::collection($this->whenLoaded('trackings')),
                 'items' =>   OrderItemResource::collection($this->items),
                 'recipient' => new AddressResource($this->recipient),

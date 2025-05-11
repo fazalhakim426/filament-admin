@@ -20,8 +20,10 @@ class OrderTrackingResource extends JsonResource
             'status' => $this->status,
             'note' => $this->note,
             'date' => $this->created_at->format('Y-m-d H:i:s'),
-            'created_at' => $this->created_at->diffForHumans(),
-            'updated_at' => $this->updated_at->diffForHumans(),
+            'created_at' => $this->created_at->format('Y-m-d H:i:s'),
+            'updated_at' => $this->updated_at->format('Y-m-d H:i:s'),
+            'created_at_for_humans' => $this->created_at->diffForHumans(),
+            'updated_at_for_humans' => $this->updated_at->diffForHumans(),
             'order' => new OrderMiniResource($this->whenLoaded('order')),
             
         ];

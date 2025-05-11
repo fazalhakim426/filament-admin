@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api\Supplier;
 use App\Models\Product;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Http\Resources\ProductResource;
+use App\Http\Resources\SupplierProductResource;
 use App\Models\ProductVariant;
 use App\Models\SubCategory;
 use App\Models\VariantOption;
@@ -57,13 +57,12 @@ class ProductController extends Controller
         }
         $products = $query
             ->with([
-                'productVariants',
-                'reviews'
+                'productVariants'
             ])
             ->paginate(request('per_page', 15));
 
         return $this->json(200, true, 'Products retrieved successfully.', [
-            'data' => ProductResource::collection($products),
+            'data' => SupplierProductResource::collection($products),
             'meta' => [
                 'current_page' => $products->currentPage(),
                 'last_page' => $products->lastPage(),
@@ -83,8 +82,8 @@ class ProductController extends Controller
 
     public function show(Product $product)
     {
-        return $this->json(200, true, 'Show product', new ProductResource($product->load(
-            'productVariants.variantOptions'
+        return $this->json(200, true, 'Show product', new SupplierProductResource($product->load(
+            'productVariants.variantOptions',
         )));
     }
     public function store(Request $request)
@@ -96,6 +95,8 @@ class ProductController extends Controller
             'variants' => 'nullable|array',
             'variants.*.sku' => 'required|string|max:255|unique:product_variants,sku',
             'variants.*.description' => 'nullable|string',
+            'variants.*.discount' => 'nullable|integer|min:0|max:100',
+            'variants.*.discount_description' => 'nullable|string',
             'variants.*.images' => 'required|array',
             'variants.*.images.*' => 'file|mimes:jpeg,png,jpg,gif,svg,mp4,avi,mov,webm|max:20480',
             'variants.*.unit_selling_price' => 'required|numeric|min:0',
@@ -129,6 +130,9 @@ class ProductController extends Controller
 
                     $variant = $product->productVariants()->create([
                         'sku' => $variantData['sku'],
+                        'discount' => $variantData['discount'] ?? 0,
+                        'discount_description' => $variantData['discount_description'],
+                        'sku' => $variantData['sku'],
                         'unit_selling_price' => $variantData['unit_selling_price'],
                         'description' => $variantData['description'] ?? '',
                     ]);
@@ -159,7 +163,7 @@ class ProductController extends Controller
 
 
             DB::commit();
-            return $this->json(200, true, 'Product created successfully', new ProductResource($product->load('productVariants.variantOptions')));
+            return $this->json(200, true, 'Product created successfully', new SupplierProductResource($product->load('productVariants.variantOptions')));
         } catch (\Exception $e) {
             DB::rollBack();
             return $this->json(500, false, 'Error: ' . $e->getMessage());
@@ -300,7 +304,7 @@ class ProductController extends Controller
             // }
 
             DB::commit();
-            return $this->json(200, true, 'Product updated successfully!', new ProductResource($product->load('productVariants.variantOptions')));
+            return $this->json(200, true, 'Product updated successfully!', new SupplierProductResource($product->load('productVariants.variantOptions')));
         } catch (\Exception $e) {
             DB::rollBack();
             return $this->json(500, false, 'Error: ' . $e->getMessage());
@@ -327,7 +331,7 @@ class ProductController extends Controller
     {
         $product->update(['is_active' => false]);
 
-        return $this->json(200, true, 'Product deactivated successfully', new ProductResource($product->load('productVariants.variantOptions')));
+        return $this->json(200, true, 'Product deactivated successfully', new SupplierProductResource($product->load('productVariants.variantOptions')));
     }
 
 
@@ -340,7 +344,7 @@ class ProductController extends Controller
         ];
 
         return $this->json(200, true, 'performace data', [
-            'product' => new ProductResource($product),
+            'product' => new SupplierProductResource($product),
             'performance' => $performanceData,
         ]);
     }
