@@ -16,9 +16,17 @@ use App\Models\City;
 use App\Models\Country;
 
 use Illuminate\Support\Str;
+use Filament\Models\Contracts\FilamentUser;
 
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser
 {
+  
+
+    public function canAccessPanel(\Filament\Panel $panel): bool
+    { 
+        return (in_array('Super admin',$this->roles->pluck('name')->toArray()));
+    }
+
     use HasRoles, HasApiTokens;
     use HasFactory, Notifiable;
     protected $guard_name = ['web', 'api'];
@@ -121,4 +129,18 @@ class User extends Authenticatable
             $user->referral_code = Str::upper(Str::random(8));
         });
     }
+    public function followedSuppliers()
+    {
+        return $this->belongsToMany(User::class, 'followed_suppliers', 'customer_user_id', 'supplier_user_id')
+                    ->withTimestamps();
+    }
+
+    public function followers()
+    {
+        return $this->belongsToMany(User::class, 'followed_suppliers', 'supplier_user_id', 'customer_user_id')
+                    ->withTimestamps();
+    }
+
+
+
 }

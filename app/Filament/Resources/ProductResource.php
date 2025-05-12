@@ -18,6 +18,7 @@ use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\ImageColumn;
+use Filament\Tables\Columns\ToggleColumn;
 
 class ProductResource extends Resource
 {
@@ -220,9 +221,17 @@ class ProductResource extends Resource
 
 
 
-                IconColumn::make('is_active')
-                    ->label('Active')
-                    ->boolean(),
+                ToggleColumn::make('is_active')
+                ->label('Active')
+                ->sortable()
+                ->afterStateUpdated(function ($record, $state) {
+                    // Optional: Trigger something after toggle
+                    Notification::make()
+                        ->title('Status Updated')
+                        ->body("Product is now " . ($state ? 'Active' : 'Inactive'))
+                        ->success()
+                        ->send();
+                }),
 
                 TextColumn::make('category.name')
                     ->label('Category')

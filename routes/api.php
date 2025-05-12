@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\FollowSupplierController;
 use App\Http\Resources\UserResource;
 use App\Models\Category;
 use App\Models\User;
@@ -32,6 +33,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::apiResource('banners', \App\Http\Controllers\Api\Common\HomeBannerController::class)->only('index', 'show');
 });
 Route::get('order/{warehouse}/trackings', [\App\Http\Controllers\Api\Supplier\OrderTrackingController::class, 'index']);
+
+Route::middleware(['auth:sanctum'])->group(function(){
+    Route::get('following', [FollowSupplierController::class, 'followedSuppliers']);
+    Route::post('/{id}/follow', [FollowSupplierController::class, 'follow']);
+    Route::delete('/{id}/unfollow', [FollowSupplierController::class, 'unfollow']);
+});
 
 require('customer.php');
 require('supplier.php');

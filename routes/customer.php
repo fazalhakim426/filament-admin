@@ -1,14 +1,17 @@
 <?php
 
-use App\Http\Controllers\ReviewController;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\Customer\PlaceOrderController;
+use App\Http\Controllers\Api\Customer\ProductController;
+use App\Http\Controllers\Api\Customer\ReviewController;
+use Illuminate\Support\Facades\Route; 
 
 
-Route::middleware(['auth:sanctum'])->prefix('customer')->group(function (){
-    Route::apiResource('products',\App\Http\Controllers\Api\Customer\ProductController::class); 
-    Route::apiResource('orders',\App\Http\Controllers\Api\Customer\PlaceOrderController::class)->only('index','show','store','destroy');
-    Route::post('orders/{order}/update-product-quantity',[\App\Http\Controllers\Api\Customer\PlaceOrderController::class,'updateProductQuantity']);
-    Route::delete('order-items/{order-item}',[\App\Http\Controllers\Api\Customer\PlaceOrderController::class,'removeItems']);
-    Route::post('reviews', [\App\Http\Controllers\Api\Customer\ReviewController::class, 'store']);
+
+Route::middleware(['auth:sanctum'])->prefix('customer')->group(function () {
+    Route::apiResource('products', ProductController::class);
+    Route::apiResource('orders', PlaceOrderController::class)->only('index', 'show', 'store', 'destroy');
+    Route::post('orders/{order}/update-product-quantity', [PlaceOrderController::class, 'updateProductQuantity']);
+    Route::delete('order-items/{order-item}', [PlaceOrderController::class, 'removeItems']);
+    Route::post('reviews', [ReviewController::class, 'store']);
+
 });
