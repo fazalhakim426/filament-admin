@@ -99,13 +99,23 @@ class ProductResource extends JsonResource
             }
         }
         
-
+       if($request->user()) { 
+            $user = $request->user();
+            $favorite = $user->followedProducts()->where('product_id', $this->id)->exists(); 
+            $countFavorite = $user->followedProducts()->where('product_id', $this->id)->count();
+        } else {
+            $favorite = false;
+            $countFavorite = 0;
+        } 
         return [
             'id' => $this->id,
             'name' => $this->name,
             'description' => $this->description,
             'is_active' => (bool) $this->is_active,
             'manzil_choice' => (bool) $this->manzil_choice,
+            'supplier_user_id'=>$this->supplier_user_id, 
+            'count_favorite'=> $countFavorite,
+            "favorite" =>  $favorite, 
             'sponsor' => (bool) $this->sponsor,
             'available_attributes' => $availableAttributes,
             'variant_mapping' => $variantMapping,
@@ -116,13 +126,22 @@ class ProductResource extends JsonResource
             'sub_category' => new SubCategoryResource($this->subCategory),
             'reseller' => new ResellerResource($this->whenLoaded('reseller')),
             'supplier' => new UserResource($this->whenLoaded('supplierUser')),
-            'reviews' => ReviewResource::collection($this->whenLoaded('reviews')),
             'average_rating' => round($averageRating),
             'total_sold' => (int) $totalSold,
             'created_at' => $this->created_at->format('Y-m-d H:i:s'),
             'updated_at' => $this->updated_at->format('Y-m-d H:i:s'),
             'created_at_for_humans' => $this->created_at->diffForHumans(),
             'updated_at_for_humans' => $this->updated_at->diffForHumans(),
+            'reviews' => ReviewResource::collection($this->whenLoaded('reviews')),
+            'review_analytics'=> [
+                    'total_reviews' => $this->reviews()->count(),
+                    'average_rating' => number_format($this->reviews()->avg('rating_stars'),2),
+                    'one_star' => $this->reviews()->where('rating_stars', 1)->count(),
+                    'two_star' => $this->reviews()->where('rating_stars', 2)->count(),
+                    'three_star' => $this->reviews()->where('rating_stars', 3)->count(),
+                    'four_star' => $this->reviews()->where('rating_stars', 4)->count(),
+                    'five_star' => $this->reviews()->where('rating_stars', 5)->count()
+            ]
         ];
     }
 }

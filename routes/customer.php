@@ -13,5 +13,4 @@ Route::middleware(['auth:sanctum'])->prefix('customer')->group(function () {
     Route::post('orders/{order}/update-product-quantity', [PlaceOrderController::class, 'updateProductQuantity']);
     Route::delete('order-items/{order-item}', [PlaceOrderController::class, 'removeItems']);
     Route::post('reviews', [ReviewController::class, 'store']);
-
 });

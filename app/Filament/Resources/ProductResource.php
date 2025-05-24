@@ -11,6 +11,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Forms\Components\ColorPicker;
 use Filament\Tables\Table;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\FileUpload;
@@ -103,7 +104,9 @@ class ProductResource extends Resource
                             ->label('SKU')
                             ->required()
                             ->maxLength(255),
-
+                        ColorPicker::make('color_code')
+                            ->label('Color Code')
+                            ->required(),
                             TextInput::make('unit_selling_price')
                             ->label('Unit Selling Price')
                             ->numeric()

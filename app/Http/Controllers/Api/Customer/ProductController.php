@@ -33,7 +33,9 @@ class ProductController extends Controller
             'per_page',
             'trending',
             'sort_by',
-            'sort_order'
+            'sort_order',
+            'supplier_user_id'
+
         ]);
 
         $query = Product::with(['productVariants.images'])->where('is_active', true);
@@ -42,11 +44,13 @@ class ProductController extends Controller
         if (isset($params['manzil_choice'])) {
             $query->where('manzil_choice', $params['manzil_choice'] == "1" ? 1 : 0);
         }
+        if (isset($params['supplier_user_id'])) {
+            $query->where('supplier_user_id', $params['supplier_user_id']);
+        }
 
         if (isset($params['sponsor'])) {
             $query->where('sponsor', $params['sponsor'] == "1" ? 1 : 0);
-        }
-
+        }  
         if (!empty($params['search'])) {
             $search = $params['search'];
             $query->where(function ($query) use ($search) {
@@ -128,24 +132,23 @@ class ProductController extends Controller
 
     function show(Product $product)
     {
+        
         $product->load([
+            'reviews' => function ($query){
+                return $query->latest()->take(5);
+            },
             'productVariants.images',
             'supplierUser',
             'category',
             'subCategory',
             'productVariants.variantOptions',
-            'reviews' => function ($query) {
-                $query->latest()->take(5);
-            },
             'reviews.user'
         ]);
-        $averageRating = $product->reviews()->avg('rating_stars');
         return response()->json([
             'success' => true,
             'message' => 'Product details',
-            'data' => (new ProductResource($product))->additional([
-                'average_rating' => $averageRating,
-            ])
+            'data' =>  new ProductResource($product),
+                    
         ]);
     }
 }

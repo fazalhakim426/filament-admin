@@ -14,11 +14,13 @@ class OrderResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+ 
         return
             [
                 'id' => $this->id,
                 'warehouse_number' => $this->warehouse_number,
                 'total_price' => (int)$this->total_price,
+                 
                 'total_price_detail' => [
                     'items_cost'    =>   $this->items_cost,
                     'shipping_cost' => $this->shipping_cost,

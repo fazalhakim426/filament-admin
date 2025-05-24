@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Auth;
 
 class UserResource extends JsonResource
 {
@@ -14,13 +15,24 @@ class UserResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        if($request->user()) { 
+            $user = $request->user();
+            $followed = $user->followedSuppliers()->where('supplier_user_id', $this->id)->exists();
+            count($user->followedSuppliers()->where('supplier_user_id', $this->id)->get());
+            $countFollowedSuppliers = $user->followedSuppliers()->where('supplier_user_id', $this->id)->count();
+        } else { 
 
+            $followed = false;
+            $countFollowedSuppliers = 0;
+        } 
         $data = [
             'id' => $this->id,
             "name" => $this->name,
             "email" => $this->email,
             "email_verified_at" => $this->email_verified_at,
             "active" => $this->active ? true : false,
+            'count_followed'=> $countFollowedSuppliers,
+            "followed" =>  $followed, 
             "profile_photo_path" => $this->profile_photo_path,
             "address" => $this->address,
             "roles" => $this->roles->pluck('name'),

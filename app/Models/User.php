@@ -134,13 +134,14 @@ class User extends Authenticatable implements FilamentUser
         return $this->belongsToMany(User::class, 'followed_suppliers', 'customer_user_id', 'supplier_user_id')
                     ->withTimestamps();
     }
-
     public function followers()
     {
         return $this->belongsToMany(User::class, 'followed_suppliers', 'supplier_user_id', 'customer_user_id')
                     ->withTimestamps();
     }
-
-
-
+    public function followedProducts()
+    {
+        return $this->belongsToMany(Product::class, 'followed_products', 'customer_user_id', 'product_id')
+              ->withTimestamps();
+    }
 }

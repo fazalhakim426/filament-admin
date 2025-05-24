@@ -62,4 +62,9 @@ class Product extends Model
     {
         return $this->hasMany(OrderItem::class);
     }
+    public function followers()
+    {
+        return $this->belongsToMany(User::class, 'followed_products', 'product_id', 'customer_user_id')
+                    ->withTimestamps();
+    }
 }
